@@ -29,6 +29,10 @@ class Player:
                 self.playerTwoDeck = self.playerTwoDeck[1:]
                 self.playerTwoHand.append(card_drawn)
             print("Player 2 drew " + str(amount) + " cards")
+
+    def attack(self,player):
+        pass
+        #Add code here dweeb
                 
     def shuffle(self,player):
         if player == 1:
@@ -111,8 +115,9 @@ cards.append(Card("Emperor Thaurissan",6,5,5, endFunc = """if playerNum == 1:
 else:
     for i in player.playerTwoHand:
         i.mana -= 1"""))
-cards.append(Card("Bolderfist Oger",6,6,7))
-player = Player([cards[1],cards[2],cards[3]],[cards[0]])
+for i in range(2):
+    cards.append(Card("Bolderfist Oger",6,6,7))
+player = Player([cards[1],cards[2],cards[3]],[cards[0],cards[4]])
 #For any variable "player" or "playerNum" within a function this refers to the player *in control* of the thing making the effect, not necessarily the player being affected
 player.draw(100,1)
 player.draw(100,2)
