@@ -8,10 +8,20 @@ class Player:
         self.playerTwoBoard = []
         self.playerTwoHand = []
         self.playerTwoDeck = playerTwoDeck
+        self.currentPlayer = 1
 
     def addCard(self, card):
         self.deck.append(card)
 
+    def boardDisplay(self):
+        #Update this with pygame stuff later, simple visualiser for logic for now
+        print("\n[][] Player One Board [][]")
+        for i in self.playerOneBoard:
+            print("[] " + i.name + " []")
+        print("\n[][] Player Two Board [] []")
+        for i in self.playerTwoBoard:
+            print("[] " + i.name + " []")
+        
     def draw(self, amount, player):
         if player == 1:
             if len(self.playerOneDeck) < amount:
@@ -30,8 +40,12 @@ class Player:
                 self.playerTwoHand.append(card_drawn)
             print("Player 2 drew " + str(amount) + " cards")
 
-    def attack(self,player):
-        pass
+    def attack(self):
+        self.boardDisplay()
+        if self.currentPlayer == 1:
+            pass
+        else:
+            pass
         #Add code here dweeb
                 
     def shuffle(self,player):
@@ -42,20 +56,24 @@ class Player:
 
     def destroy(self,card, player):
         card.executeFunction(card.destroyedFunc, player)
-        if player ==1:
+        if player == 1:
             (self.playerOneBoard).remove(card)
         else:
             (self.playerTwoBoard).remove(card)
             
-    def endTurn(self, player):
+    def endTurn(self):
         for card in playerOneBoard:
             card.executeFunction(card.endFunc, 1)
         for card in playerTwoBoard:
             card.executeFunction(card.endFunc, 2)
+        if self.currentPlayer == 1:
+            self.currentPlayer = 2
+        else:
+            self.currentPlayer = 1
         #add a global player changer, possibly as a class variable
 
-    def play(self, mana, cardPos, player):
-        if player == 1:
+    def play(self, mana, cardPos):
+        if self.currentPlayer == 1:
             card_played = self.playerOneHand[cardPos]
             if card_played.mana <= mana:
                 self.playerOneBoard.append((self.playerOneHand).pop(cardPos))
@@ -77,9 +95,10 @@ class Player:
                 print("You failed to play a card, it costs " + str(card_played.mana) + " mana, whereas you have only " + str(mana) + " mana.")
             print("You have " + str(mana) + " mana remaining.")
             return mana
+
 class Card:
     def __init__(self,name, mana, attack, health, playedFunc = "pass", destroyedFunc = "pass", attackFunc = "pass", endFunc = "pass"):
-        #for all the func ones input block of text which is passed into generic functions containing only an exec block, this saves me from having to write hundreds of new functions and allows for creations of new cards extremely quickly
+        #for all the func variables the input is a block of text which is passed into generic functions containing only an exec block, this saves me from having to write hundreds of new functions and allows for creations of new cards extremely quickly
         #The function text defaults to a function that does nothing
         self.name = name
         self.playedFunc = playedFunc
@@ -93,6 +112,7 @@ class Card:
     def executeFunction(self,text, playerNum):
         exec(text)
 
+#Below are card definitions
 cards = []
 cards.append(Card("Ragnaros the Firelord" ,8,2,8,playedFunc = """if playerNum == 1:
     for i in player.playerTwoBoard:
