@@ -2,6 +2,8 @@ import random, pprint, pygame
 from enum import Enum
 class Player:
     def __init__(self, cardList):
+        self.playerOneHealth = 25
+        self.playerTwoHealth = 25
         self.playerOneHand = []
         self.playerOneBoard = []
         self.playerTwoBoard = []
@@ -103,7 +105,7 @@ class Player:
             return mana
 
 class Card:
-    def __init__(self,name, mana, attack, health, playedFunc = "pass", destroyedFunc = "pass", attackFunc = "pass", endFunc = "pass"):
+    def __init__(self,shopCost,name, mana, attack, health, playedFunc = "pass", destroyedFunc = "pass", attackFunc = "pass", endFunc = "pass"):
         #for all the func variables the input is a block of text which is passed into generic functions containing only an exec block, this saves me from having to write hundreds of new functions and allows for creations of new cards extremely quickly
         #The function text defaults to a function that does nothing
         self.name = name
@@ -121,7 +123,7 @@ class Card:
 #Below are card definitions
 cards = []
 #Deals 8 damage to all minions on your opponent's board on play
-cards.append(Card("Ragnaros the Firelord" ,8,2,8,playedFunc = """if playerNum == 1:
+cards.append(Card(4,"Ragnaros the Firelord" ,8,2,8,playedFunc = """if playerNum == 1:
     for i in player.playerTwoBoard:
         i.health -= 8
         if i.health <= 0:
@@ -133,24 +135,31 @@ else:
             player.destroy(i,1)"""))
 
 #Steals a random minion from your opponents board on death, uses an almost unreadable oneliner to do this for efficiency
-cards.append(Card("Sylvannas windrunner",6,5,5, destroyedFunc = """if playerNum == 1 and player.playerTwoBoard:
+cards.append(Card(3,"Sylvannas windrunner",6,5,5, destroyedFunc = """if playerNum == 1 and player.playerTwoBoard:
     (player.playerOneBoard).append((player.playerTwoBoard).pop(random.randint(0,len(player.playerTwoBoard)-1)))
 elif player.playerOneBoard and playerNum == 2:
     player.playerTwoBoard.append(random.choice(player.playerOneBoard).pop)"""))
 
 #Reduces the cost of all cards in your hand at the end of each turn
-cards.append(Card("Emperor Thaurissan",6,5,5, endFunc = """if playerNum == 1:
+cards.append(Card(2,"Emperor Thaurissan",6,5,5, endFunc = """if playerNum == 1:
     for i in player.playerOneHand:
         i.mana -= 1
 else:
     for i in player.playerTwoHand:
         i.mana -= 1"""))
-for i in range(2):
-    cards.append(Card("Bolderfist Oger",6,6,7))
-player = Player([cards[1],cards[2],cards[3]],[cards[0],cards[4]], cards)
+cards.append(Card(1,"Bolderfist Oger",6,6,7))
+#Deals 5 damage to the player playing it
+cards.append(Card(2,"Crusader",4,6,6,playedFunc = """if playerNum == 1:
+    player.playerOneHealth -= 5
+else:
+    player.playerTwoHealth -= 5"""))
+cards.append(Card(1,"Angered Whelp", 2, 1,2, destroyedFunc = """for i in player.playerOneBoard:
+    i.health -= 2
+for i in player.playerTwoBoard:
+    i.health -= 2"""))
+player = Player(cards)
 #For any variable "player" or "playerNum" within a function this refers to the player *in control* of the thing making the effect, not necessarily the player being affected
-player.draw(100,1)
-player.draw(100,2)
+
 
 
         
