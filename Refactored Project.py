@@ -10,15 +10,33 @@ class Player:
         self.playerTwoHand = []
         self.globalCardList = cardList
         self.currentPlayer = 1
+        self.forSale = []
+        self.playerOneCurrency = 0
+        self.playerTwoCurrency = 0
 
     def genCards(self, amount):
         displaylist = []
         #randomly generates (amount) cards from the globalCardList (list of all possible cards) and prints their name, will display them for purchase later and replace card drawing
         for i in range(amount):
             displaylist.append(random.choice(self.globalCardList))
-        for i in displaylist:
+        self.forSale = displaylist
+        for i in self.forSale:
             print(i.name)
 
+    def buyCard(self, cardPos):
+        if self.currentPlayer == 1:
+            if self.playerOneCurrency >= self.forSale[cardPos].shopCost:
+                #Adds the purchased card to the purchasinc player's hand and removes it from the shop if they have enough currency to buy it
+                self.playerOneHand.append(self.forSale.pop(cardPos))
+            else:
+                print("Oops, looks like you dont have enough gold to purchase that card right now!")
+        else:
+            if self.playerTwoCurrency >= self.forSale[cardPos].shopCost:
+                #Adds the purchased card to the purchasinc player's hand and removes it from the shop if they have enough currency to buy it
+                self.playerTwoHand.append(self.forSale.pop(cardPos))
+            else:
+                print("Oops, looks like you dont have enough gold to purchase that card right now!")
+                
     def boardDisplay(self):
         #Update this with pygame stuff later, simple visualiser for logic for now
         print("\n[][] Player One Board [][]")
@@ -69,15 +87,16 @@ class Player:
             (self.playerTwoBoard).remove(card)
             
     def endTurn(self):
+        #Executes the end of turn functions of the cards in play
         for card in playerOneBoard:
             card.executeFunction(card.endFunc, 1)
         for card in playerTwoBoard:
             card.executeFunction(card.endFunc, 2)
-        if self.currentPlayer == 1:
-            self.currentPlayer = 2
-        else:
-            self.currentPlayer = 1
-        #add a global player changer, possibly as a class variable
+        #Changes the current player
+        self.playerOneCurrency += 3
+        self.playerTwoCurrency += 3
+        self.currentPlayer = (self.currentPlayer % 2)+1
+        self.genCards(5)
 
     def play(self, mana, cardPos):
         if self.currentPlayer == 1:
@@ -147,17 +166,25 @@ cards.append(Card(2,"Emperor Thaurissan",6,5,5, endFunc = """if playerNum == 1:
 else:
     for i in player.playerTwoHand:
         i.mana -= 1"""))
+
 cards.append(Card(1,"Bolderfist Oger",6,6,7))
-#Deals 5 damage to the player playing it
+
+#Deals 5 damage to the player playing it on play
 cards.append(Card(2,"Crusader",4,6,6,playedFunc = """if playerNum == 1:
     player.playerOneHealth -= 5
 else:
     player.playerTwoHealth -= 5"""))
+
+#On death deals 2 damage to all minions on the board
 cards.append(Card(1,"Angered Whelp", 2, 1,2, destroyedFunc = """for i in player.playerOneBoard:
     i.health -= 2
 for i in player.playerTwoBoard:
     i.health -= 2"""))
 player = Player(cards)
+#Gives the second player a small headstart as they are naturally at a disadvantage due to how turn based games work
+player.playerTwoCurrency += 2
+
+
 #For any variable "player" or "playerNum" within a function this refers to the player *in control* of the thing making the effect, not necessarily the player being affected
 
 
