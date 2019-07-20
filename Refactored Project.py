@@ -1,5 +1,42 @@
 import random, pprint, pygame
 from enum import Enum
+import numpy as np
+#________________________________#
+### MACHINE LEARNING CODE HERE ###
+#________________________________#
+
+def getImmediateReward(healthLost = 0, damageDealt = 0, minionKilled = None, minionDied = None, gameWon = False, gameLost = False):
+    reward = 0
+    reward -= healthLost + (minionDied.attack * 2)
+    reward += damageDealt + (minionKilled.attack * 2)
+    if gameLost:
+        reward -= 10
+    if gameWon:
+        reward += 10
+    return reward
+
+def makeAction():
+    highestReward = 0
+    actionToTake = None
+    variableSave = [player.playerOneHealth,player.playerTwoHealth,player.currentPlayer,player.playerOneCurrency,player.playerTwoCurrency]
+    boardSave = [player.playerOneHand,player.playerTwoHand,player.playerOneBoard,player.playerTwoBoard,player.globalCardList,player.forSale]
+    actions = getAvailableActions()
+    for action in actions:
+        #Put something to get the reward for each action
+        if reward > highestReward:
+            highestReward = reward
+            actionToTake = action
+        #Might need to rework this function to make recursively doing this possible
+    
+    
+    
+def getAvailableActions():
+    pass
+
+#_______________________________#
+### END MACHINE LEARNING CODE ###
+#_______________________________#
+
 class Player:
     def __init__(self, cardList):
         self.playerOneHealth = 25
