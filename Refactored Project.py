@@ -15,6 +15,9 @@ def getImmediateReward(healthLost = 0, damageDealt = 0, minionKilled = None, min
         reward += 10
     return reward
 
+
+    
+
 def makeAction():
     highestReward = 0
     actionToTake = None
@@ -22,16 +25,31 @@ def makeAction():
     boardSave = [player.playerOneHand,player.playerTwoHand,player.playerOneBoard,player.playerTwoBoard,player.globalCardList,player.forSale]
     actions = getAvailableActions()
     for action in actions:
-        #Put something to get the reward for each action
+        if type(action) is tuple:
+            player.attack(action[0],action[1])
+        #Put something to execute and get the reward for each action
         if reward > highestReward:
             highestReward = reward
             actionToTake = action
-        #Might need to rework this function to make recursively doing this possible
-    
-    
-    
+        #Might need to rework this function to make recursively doing this possible (to either depth 2-3 or possibly higher depending on performance)
+  
 def getAvailableActions():
-    pass
+    actions = []
+    if player.currentPlayer == 1:
+        for minion in player.playerOneBoard:
+            if minion.canAttack:
+                for enemy in player.playerTwoBoard:
+                    actions.append(tuple(minion,enemy))
+        for minion in player.playerOneHand:
+            if minion.mana <= player.playerOneMana:
+                actions.append(minion)
+        for minion in player.forSale:
+            if minion.shopCost <= player.playerOneCurrency:
+                actions.append(minion)
+    return actions
+        
+        
+    
 
 #_______________________________#
 ### END MACHINE LEARNING CODE ###
@@ -45,6 +63,8 @@ class Player:
         self.playerOneBoard = []
         self.playerTwoBoard = []
         self.playerTwoHand = []
+        self.playerOneMana = 1
+        self.playerTwoMana = 1
         self.globalCardList = cardList
         self.currentPlayer = 1
         self.forSale = []
@@ -101,14 +121,21 @@ class Player:
     #            self.playerTwoHand.append(card_drawn)
     #        print("Player 2 drew " + str(amount) + " cards")
 
-    def attack(self):
+    def attack(self, card1, card2):
         self.boardDisplay()
-        card.executeFunction(card.attackFunc, self.currentPlayer)
+        card.executeFunction(card1.attackFunc, self.currentPlayer)
+        card2.health -= card1.attack
+        card1.health -= card2.attack
         if self.currentPlayer == 1:
-            pass
+            if card1.health <= 0:
+                self.destroy(card1, 1)
+            if card1.health <= 0:
+                self.destroy(card2, 2)
         else:
-            pass
-        ##Add code here dweeb##
+            if card1.health <= 0:
+                self.destroy(card1, 2)
+            if card1.health <= 0:
+                self.destroy(card2, 1)
                 
     #def shuffle(self,player):
     #    if player == 1:
@@ -164,6 +191,7 @@ class Card:
     def __init__(self,shopCost,name, mana, attack, health, playedFunc = "pass", destroyedFunc = "pass", attackFunc = "pass", endFunc = "pass"):
         #for all the func variables the input is a block of text which is passed into generic functions containing only an exec block, this saves me from having to write hundreds of new functions and allows for creations of new cards extremely quickly
         #The function text defaults to a function that does nothing
+        self.canAttack = False
         self.name = name
         self.playedFunc = playedFunc
         self.destroyedFunc = destroyedFunc
