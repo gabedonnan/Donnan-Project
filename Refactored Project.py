@@ -5,50 +5,72 @@ import numpy as np
 ### MACHINE LEARNING CODE HERE ###
 #________________________________#
 
-def getImmediateReward(healthLost = 0, damageDealt = 0, minionKilled = None, minionDied = None, gameWon = False, gameLost = False):
-    reward = 0
-    reward -= healthLost + (minionDied.attack * 2)
-    reward += damageDealt + (minionKilled.attack * 2)
-    if gameLost:
-        reward -= 10
-    if gameWon:
-        reward += 10
-    return reward
 
-
-    
-
-def makeAction():
-    highestReward = 0
-    actionToTake = None
-    variableSave = [player.playerOneHealth,player.playerTwoHealth,player.currentPlayer,player.playerOneCurrency,player.playerTwoCurrency]
-    boardSave = [player.playerOneHand,player.playerTwoHand,player.playerOneBoard,player.playerTwoBoard,player.globalCardList,player.forSale]
-    actions = getAvailableActions()
-    for action in actions:
-        if type(action) is tuple:
-            player.attack(action[0],action[1])
-        #Put something to execute and get the reward for each action
-        if reward > highestReward:
-            highestReward = reward
-            actionToTake = action
-        #Might need to rework this function to make recursively doing this possible (to either depth 2-3 or possibly higher depending on performance)
-  
-def getAvailableActions():
-    actions = []
-    if player.currentPlayer == 1:
-        for minion in player.playerOneBoard:
-            if minion.canAttack:
-                for enemy in player.playerTwoBoard:
-                    actions.append(tuple(minion,enemy))
-        for minion in player.playerOneHand:
-            if minion.mana <= player.playerOneMana:
-                actions.append(minion)
-        for minion in player.forSale:
-            if minion.shopCost <= player.playerOneCurrency:
-                actions.append(minion)
-    return actions
+##class RewardCalculator:
+##    def __init__(self):
+##        self.variableSave = []
+##        self.boardSave = []
+##        
+##    def getImmediateReward(self, healthLost = 0, damageDealt = 0, minionKilled = None, minionDied = None, gameWon = False, gameLost = False):
+##        reward = 0
+##        reward -= healthLost + (minionDied.attack * 2)
+##        reward += damageDealt + (minionKilled.attack * 2)
+##        if gameLost:
+##            reward -= 10
+##        if gameWon:
+##            reward += 10
+##        return reward
+##
+##    def testActions(self, depth):
+##        if depth == 0:
+##            return maxReward
+##        else:
+##            actions = self.getAvailableActions()
+##            for action in actions:
+##                if type(action) is tuple:
+##                    reward = getImmediateReward()
+##                    #^^^^^^^^^^^^complete this^^^^^^^^^^^
+##                    player.attack(action[0],action[1])
+##                    reward = self.testActions(depth-1)
+##
+##                else:
+##                    if (action in player.playerOneHand) or (action in player.playerTwoBoard):
+##                        player.play(None,None,card=action)
+##                        reward = 0
+##                        reward = self.testActions(depth-1)
+##                        
+##                    if action in player.forSale:
+##                        print(action.__dict__)
+##                        print("implement something to do something here")
+##                        #Add more code and recursion here ^^^^^^^^^^^^^^^
+##                if reward > maxReward:
+##                        maxReward = reward
+##
+##    def makeAction(self):
+##        highestReward = 0
+##        actionToTake = None 
+##        self.variableSave = [player.playerOneHealth,player.playerTwoHealth,player.currentPlayer,player.playerOneCurrency,player.playerTwoCurrency]
+##        self.boardSave = [player.playerOneHand,player.playerTwoHand,player.playerOneBoard,player.playerTwoBoard,player.globalCardList,player.forSale]
+##        self.actionToTake = self.testActions(3)
+##      
+##    def getAvailableActions(self):
+##        actions = []
+##        if player.currentPlayer == 1:
+##            for minion in player.playerOneBoard:
+##                if minion.canAttack:
+##                    for enemy in player.playerTwoBoard:
+##                        actions.append(tuple(minion,enemy))
+##            for minion in player.playerOneHand:
+##                if minion.mana <= player.playerOneMana:
+##                    actions.append(minion)
+##            for minion in player.forSale:
+##                if minion.shopCost <= player.playerOneCurrency:
+##                    actions.append(minion)
+##        return actions
         
-        
+#Above code is a wildly inefficient way of approaching reinforcement learning, I must first implement a simple control scheme and just give it that as an input to reduce the training time DRASTICALLY
+
+
     
 
 #_______________________________#
@@ -186,6 +208,7 @@ class Player:
                 print("You failed to play a card, it costs " + str(card_played.mana) + " mana, whereas you have only " + str(mana) + " mana.")
             print("You have " + str(mana) + " mana remaining.")
             return mana
+                
 
 class Card:
     def __init__(self,shopCost,name, mana, attack, health, playedFunc = "pass", destroyedFunc = "pass", attackFunc = "pass", endFunc = "pass"):
@@ -200,6 +223,7 @@ class Card:
         self.mana = mana
         self.health = health
         self.attack = attack
+        self.shopCost = shopCost
 
     def executeFunction(self,text, playerNum):
         exec(text)
