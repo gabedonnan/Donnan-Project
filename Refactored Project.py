@@ -78,20 +78,25 @@ import numpy as np
 #_______________________________#
 
 class Player:
+    playerHealth = [None,None]
+    playerHand = [None,None]
+    playerBoard = [None,None]
+    playerMana = [None,None]
+    playerCurrency = [None,None]
     def __init__(self, cardList):
-        self.playerOneHealth = 25
-        self.playerTwoHealth = 25
-        self.playerOneHand = []
-        self.playerOneBoard = []
-        self.playerTwoBoard = []
-        self.playerTwoHand = []
-        self.playerOneMana = 1
-        self.playerTwoMana = 1
+        self.playerHealth[0] = 25
+        self.playerHealth[1] = 25
+        self.playerHand[0] = []
+        self.playerBoard[0] = []
+        self.playerBoard[1] = []
+        self.playerHand[1] = []
+        self.playerMana[0] = 1
+        self.playerMana[1] = 1
         self.globalCardList = cardList
         self.currentPlayer = 1
         self.forSale = []
-        self.playerOneCurrency = 0
-        self.playerTwoCurrency = 0
+        self.playerCurrency[0] = 0
+        self.playerCurrency[1] = 0
 
     def genCards(self, amount):
         displaylist = []
@@ -103,26 +108,19 @@ class Player:
             print(i.name)
 
     def buyCard(self, cardPos):
-        if self.currentPlayer == 1:
-            if self.playerOneCurrency >= self.forSale[cardPos].shopCost:
-                #Adds the purchased card to the purchasinc player's hand and removes it from the shop if they have enough currency to buy it
-                self.playerOneHand.append(self.forSale.pop(cardPos))
-            else:
-                print("Oops, looks like you dont have enough gold to purchase that card right now!")
+        if self.playerCurrency[self.currentPlayer-1] >= self.forSale[cardPos].shopCost:
+            #Adds the purchased card to the purchasinc player's hand and removes it from the shop if they have enough currency to buy it
+            self.playerHand[self.currentPlayer-1].append(self.forSale.pop(cardPos))
         else:
-            if self.playerTwoCurrency >= self.forSale[cardPos].shopCost:
-                #Adds the purchased card to the purchasinc player's hand and removes it from the shop if they have enough currency to buy it
-                self.playerTwoHand.append(self.forSale.pop(cardPos))
-            else:
-                print("Oops, looks like you dont have enough gold to purchase that card right now!")
+            print("Oops, looks like you dont have enough gold to purchase that card right now!")
                 
     def boardDisplay(self):
         #Update this with pygame stuff later, simple visualiser for logic for now
         print("\n[][] Player One Board [][]")
-        for i in self.playerOneBoard:
+        for i in self.playerBoard[0]:
             print("[] " + i.name + " []")
         print("\n[][] Player Two Board [] []")
-        for i in self.playerTwoBoard:
+        for i in self.playerBoard[1]:
             print("[] " + i.name + " []")
         
     #def draw(self, amount, player):
@@ -158,56 +156,39 @@ class Player:
                 self.destroy(card1, 2)
             if card1.health <= 0:
                 self.destroy(card2, 1)
-                
-    #def shuffle(self,player):
-    #    if player == 1:
-    #        self.playerOneDeck = random.shuffle(self.playerOneDeck)
-    #    else:
-    #        self.playerTwoDeck = random.shuffle(self.playerTwoDeck)
 
     def destroy(self,card, player):
         card.executeFunction(card.destroyedFunc, player)
         if player == 1:
-            (self.playerOneBoard).remove(card)
+            (self.playerBoard[0]).remove(card)
         else:
-            (self.playerTwoBoard).remove(card)
+            (self.playerBoard[1]).remove(card)
             
     def endTurn(self):
         #Executes the end of turn functions of the cards in play
-        for card in playerOneBoard:
+        for card in playerBoard[0]:
             card.executeFunction(card.endFunc, 1)
-        for card in playerTwoBoard:
+        for card in playerBoard[1]:
             card.executeFunction(card.endFunc, 2)
         #Changes the current player
-        self.playerOneCurrency += 3
-        self.playerTwoCurrency += 3
+        self.playerCurrency[0] += 3
+        self.playerCurrency[1] += 3
         self.currentPlayer = (self.currentPlayer % 2)+1
         self.genCards(5)
 
     def play(self, mana, cardPos):
-        if self.currentPlayer == 1:
-            card_played = self.playerOneHand[cardPos]
-            #Checks if the card you're trying to play costs too much
-            if card_played.mana <= mana:
-                self.playerOneBoard.append((self.playerOneHand).pop(cardPos))
-                card_played.executeFunction(card_played.playedFunc,1)
-                mana -= card_played.mana
-                print("You played a card, costing you " + str(card_played.mana) + " mana")
-            else:
-                print("You failed to play a card, it costs " + str(card_played.mana) + " mana, whereas you have only " + str(mana) + " mana.")
-            print("You have " + str(mana) + " mana remaining.")
-            return mana
+        card_played = self.playerHand[self.currentPlayer-1][cardPos]
+        #Checks if the card you're trying to play costs too much
+        if card_played.mana <= mana:
+            self.playerBoard[self.currentPlayer-1].append((self.playerHand[self.currentPlayer-1]).pop(cardPos))
+            card_played.executeFunction(card_played.playedFunc,1)
+            mana -= card_played.mana
+            print("You played a card, costing you " + str(card_played.mana) + " mana")
         else:
-            card_played = self.playerTwoHand[cardPos]
-            if card_played.mana <= mana:
-                self.playerTwoBoard.append((self.playerTwoHand).pop(cardPos))
-                card_played.executeFunction(card_played.playedFunc,2)
-                mana -= card_played.mana
-                print("You played a card, costing you " + str(card_played.mana) + " mana")
-            else:
-                print("You failed to play a card, it costs " + str(card_played.mana) + " mana, whereas you have only " + str(mana) + " mana.")
-            print("You have " + str(mana) + " mana remaining.")
-            return mana
+            print("You failed to play a card, it costs " + str(card_played.mana) + " mana, whereas you have only " + str(mana) + " mana.")
+        print("You have " + str(mana) + " mana remaining.")
+        return mana
+
                 
 
 class Card:
@@ -271,13 +252,82 @@ for i in player.playerTwoBoard:
     i.health -= 2"""))
 player = Player(cards)
 #Gives the second player a small headstart as they are naturally at a disadvantage due to how turn based games work
-player.playerTwoCurrency += 2
+player.playerCurrency[1] += 2
 
 
 #For any variable "player" or "playerNum" within a function this refers to the player *in control* of the thing making the effect, not necessarily the player being affected
 
-
-
-        
-
+##______________ MAIN GAME LOOP _________________##
+player.playerHand[0].append(cards[0])
+player.genCards(5)
+done = False
+while not done:
+    print("__________________________\nPlayer " + str(player.currentPlayer) + "'s Turn\n__________________________\nYou may:")
+    pprint.pprint(["1. Play a minion","2. View the shop", "3. Attack with a minion", "4. End your turn"])
+    choice = 0
+    while choice not in [1,2,3,4]:
+        choice = int(input("Please input your choice [1,2,3 or 4]: "))
+    if choice == 1:
+        counter = 0
+        for i in player.playerHand[player.currentPlayer-1]:
+            print(str(counter) + ". " + i.name)
+            counter += 1
+        print(str(counter) + ". Back")
+        playChoice = 999
+        while playChoice not in range(0,len(player.playerHand[player.currentPlayer-1])+1):
+            try:
+                playChoice = int(input("please input the card you would like to play: "))
+            except:
+                print("invalid choice")
+        #print(len(player.playerHand[player.currentPlayer-1]))
+        if playChoice != len(player.playerHand[player.currentPlayer-1]):
+            player.play(player.playerMana[player.currentPlayer-1],playChoice)
+    elif choice == 2:
+        counter = 0
+        print("The shop has:")
+        for i in player.forSale:
+            print(str(counter)+".",i.name)
+            counter += 1
+        print(str(counter) + ". Back")
+        purchaseChoice = 255
+        while purchaseChoice not in range(0,len(player.forSale)+1):
+            try:
+                purchaseChoice = int(input("please input the card you would like to buy: "))
+            except:
+                print("invalid choice")
+        if purchaseChoice != len(player.forSale):
+            player.buyCard(purchaseChoice)
+    elif choice == 3:
+        counter = 0
+        print("You have " + str(len(player.playerBoard[player.currentPlayer-1])) + " minions, of which:")
+        for i in player.playerBoard[player.currentPlayer-1]:
+            if i.canAttack:
+                print(i.name)
+        print("Can attack")
+        for i in player.playerBoard[player.currentPlayer-1]:
+            print(str(counter) + ". " + i.name)
+            counter += 1
+        print(str(counter) + ". Back")
+        attackChoice = 255
+        while attackChoice not in range(0,len(player.playerBoard[player.currentPlayer-1])+1):
+            try:
+                attackChoice = int(input("please input the card you would like to attack with: "))
+            except:
+                print("invalid choice")
+        enemyChoice = 255
+        if player.currentPlayer == 2:
+            playerSwap = 1
+        else:
+            playerSwap = 2
+        counter = 0
+        for i in player.playerBoard[playerSwap-1]:
+            print(str(counter) + ". " + i.name)
+        while enemyChoice not in range(0,len(player.playerBoard[playerSwap-1])+1):
+            try:
+                enemyChoice = int(input("please input the card you would like to attack: "))
+            except:
+                print("invalid choice")
+        if attackChoice != len(player.playerBoard[player.currentPlayer-1]):
+            player.attack(player.playerBoard[player.currentPlayer-1][attackChoice],player.playerBoard[playerSwap-1][enemyChoice])
+    
     
