@@ -5,7 +5,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 ##from collections import namedtuple
 ##from itertools import count
-##from PIL import Image
 ##import torch
 ##import torch.nn as nn
 ##import torch.optim as optim
@@ -45,6 +44,35 @@ class Player:
         self.playerCurrency[0] = 0
         self.playerCurrency[1] = 0
 
+    def combineCards(self, card):
+        combinationCounter = 0
+        removed = []
+        for i in player.playerHand[player.currentPlayer-1]:
+            if i.name == card.name:
+                combinationCounter += 1
+                removed.append(i)
+            if len(removed) == 3:
+                break
+        if len(removed) < 3:
+            print("Error, you do not have enough of these cards to combine")
+        else:
+            for i in removed:
+                player.playerHand[player.currentPlayer-1].remove(i)
+            player.playerHand[player.currentPlayer-1].append(player.upgradeCard(removed[0]))
+
+    def upgradeCard(self, card):
+        if card.attack <= 5 and card.attack != 0:
+            card.attack = card.attack*2
+        else:
+            card.attack += 3
+        if card.health <= 5:
+            card.health = card.health*2
+        else:
+            card.health += 3
+        if card.mana >= 3:
+            card.mana -= 1
+        return card
+        
     def genCards(self, amount):
         displaylist = []
         #randomly generates (amount) cards from the globalCardList (list of all possible cards) and prints their name, will display them for purchase later and replace card drawing
@@ -67,16 +95,16 @@ class Player:
         #Update this with pygame stuff later, simple visualiser for logic for now
         print("\n[][] Player One Board [][]:\n")
         for i in self.playerBoard[0]:
-            print("[] " + i.name + " []")
+            print("[] " + i.name + f" [{i.mana}/{i.attack}/{i.health}]")
         print("\n[][] Player One Hand [][]:\n")
         for i in self.playerHand[0]:
-            print("[] " + i.name + " []")
+            print("[] " + i.name + f" [{i.mana}/{i.attack}/{i.health}]")
         print("\n[][] Player Two Board [][]:\n")
         for i in self.playerBoard[1]:
-            print("[] " + i.name + " []")
+            print("[] " + i.name + f" [{i.mana}/{i.attack}/{i.health}]")
         print("\n[][] Player Two Hand [][]:\n")
         for i in self.playerHand[1]:
-            print("[] " + i.name + " []")
+            print("[] " + i.name + f" [{i.mana}/{i.attack}/{i.health}]")
         print(f"Player one has {player.playerMana[0]} mana and {player.playerCurrency[0]} currency\nPlayer two has {player.playerMana[1]} mana and {player.playerCurrency[1]} currency")
         
     #def draw(self, amount, player):
@@ -304,11 +332,11 @@ done = False
 while not done:
     player.boardDisplay()
     print("__________________________\nPlayer " + str(player.currentPlayer) + "'s Turn\n__________________________\nYou may:")
-    pprint.pprint(["1. Play a minion","2. View the shop", "3. Attack with a minion", "4. End your turn"])
+    pprint.pprint(["1. Play a minion","2. View the shop", "3. Attack with a minion", "4. End your turn", "5. Combine Cards"])
     choice = 0
-    while choice not in [1,2,3,4]:
+    while choice not in [1,2,3,4,5]:
         try:
-            choice = int(input("Please input your choice [1,2,3 or 4]: "))
+            choice = int(input("Please input your choice [1,2,3,4 or 5]: "))
         except:
             print("Invalid input")
     if choice == 1:
@@ -385,6 +413,22 @@ while not done:
             player.attack(player.playerBoard[player.currentPlayer-1][attackChoice],player.playerBoard[playerSwap-1][enemyChoice])
     elif choice == 4:
         player.endTurn()
+    elif choice == 5:
+        counter = 0
+        print("You have the following cards, choose one which you have at least 3 of to combine:")
+        for i in player.playerHand[player.currentPlayer-1]:
+            print(str(counter)+".",i.name)
+            counter += 1
+        print(str(counter) + ". Back")
+        combinationChoice = 255
+        while combinationChoice not in range(0,len(player.playerHand[player.currentPlayer-1])+1):
+            try:
+                combinationChoice = int(input("please input the card you would like to combine: "))
+            except:
+                print("invalid choice")
+        if combinationChoice != len(player.playerHand[player.currentPlayer-1]):
+            player.combineCards(player.playerHand[player.currentPlayer-1][combinationChoice])
+                    
     if player.playerHealth[0] <= 0 or player.playerHealth[1] <= 0:
         done = True
         
