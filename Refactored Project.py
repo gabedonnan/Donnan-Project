@@ -3,6 +3,10 @@ from enum import Enum
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+
+#Pygame Setup vvVVvv
+pygame.init()
+#Gets screen size to automatically set the screen size to match the native reolution
 ##from collections import namedtuple
 ##from itertools import count
 ##import torch
@@ -23,7 +27,41 @@ import matplotlib.pyplot as plt
 ### END MACHINE LEARNING CODE ###
 #_______________________________#
 
+class Button:
+    def __init__(self, coords, size, picture):
+        self.coords = coords
+        self.picture = pygame.image.load(picture)
+        self.picture = pygame.transform.scale(self.picture, size)
+
+    def press(self):
+        pass
+
+class EndTurn(Button):
+    def __init__(self):
+        Button.__init__(self, (10,10),(10,15),"C:\\Users\\Gabriel\\Desktop\\EndTurn.png")
+
+    def press(self):
+        player.endTurn()
+
+class Combine(Button):
+    def __init__(self):
+        Button.__init__(self,(20,20),(10,15),"C:\\Users\\Gabriel\\Desktop\\Combine.png")
+
+    def press(self):
+        pass #Add something to choose a card and call player.combineCard() with that card
+
+class Buy(Button):
+    def __init__(self):
+        Button.__init__(self,(30,30),(10,15),"C:\\Users\\Gabriel\\Desktop\\Buy.png")
+
+    def press(self):
+        for i in player.forSale:
+            pass #Add code to draw each card in the shop on the screen, maybe adding smoother animations later
+
 class Player:
+    displayInfo = pygame.display.Info()
+    screen = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h))
+    playerMaxMana = [None,None]
     playerHealth = [None,None]
     playerHand = [None,None]
     playerBoard = [None,None]
@@ -36,6 +74,8 @@ class Player:
         self.playerBoard[0] = []
         self.playerBoard[1] = []
         self.playerHand[1] = []
+        self.playerMaxMana[0] = 1
+        self.playerMaxMana[1] = 1
         self.playerMana[0] = 1
         self.playerMana[1] = 1
         self.globalCardList = cardList
@@ -43,35 +83,29 @@ class Player:
         self.forSale = []
         self.playerCurrency[0] = 0
         self.playerCurrency[1] = 0
+        self.cardImage = pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Card.png")
+        self.cardImage = pygame.transform.scale(self.cardImage, (148, 192))
 
     def combineCards(self, card):
         combinationCounter = 0
         removed = []
         for i in player.playerHand[player.currentPlayer-1]:
-            if i.name == card.name:
-                combinationCounter += 1
+            if i.name == card.name and i.mana == card.mana and i.attack == card.attack and i.health == card.health:
                 removed.append(i)
-            if len(removed) == 3:
-                break
+                combinationCounter += 1
         if len(removed) < 3:
             print("Error, you do not have enough of these cards to combine")
         else:
             for i in removed:
                 player.playerHand[player.currentPlayer-1].remove(i)
-            player.playerHand[player.currentPlayer-1].append(player.upgradeCard(removed[0]))
+            player.playerHand[player.currentPlayer-1].append(player.upgradeCard(removed))
 
-    def upgradeCard(self, card):
-        if card.attack <= 5 and card.attack != 0:
-            card.attack = card.attack*2
-        else:
-            card.attack += 3
-        if card.health <= 5:
-            card.health = card.health*2
-        else:
-            card.health += 3
-        if card.mana >= 3:
-            card.mana -= 1
-        return card
+    def upgradeCard(self, cards):
+        cards[0].attack += (1 + int(((len(cards)-3)/3)))
+        cards[0].health += (1 + int(((len(cards)-3)/3)))
+        if cards[0].mana < 10:
+            cards[0].mana += (1 + int(((len(cards)-3)/3)))
+        return cards[0]
         
     def genCards(self, amount):
         displaylist = []
@@ -106,6 +140,7 @@ class Player:
         for i in self.playerHand[1]:
             print("[] " + i.name + f" [{i.mana}/{i.attack}/{i.health}]")
         print(f"Player one has {player.playerMana[0]} mana and {player.playerCurrency[0]} currency\nPlayer two has {player.playerMana[1]} mana and {player.playerCurrency[1]} currency")
+        print(f"Player one has {player.playerHealth[0]} health and player two has {player.playerHealth[1]} health")
         
     #def draw(self, amount, player):
     #    if player == 1:
@@ -128,9 +163,10 @@ class Player:
     def attack(self, card1, card2):
         self.boardDisplay()
         if card1.canAttack:
-            card.attacking()
+            card1.attacking()
             card2.health -= card1.attack
             card1.health -= card2.attack
+            card1.canAttack = False
             if self.currentPlayer == 1:
                 if card1.health <= 0:
                     self.destroy(card1, 1)
@@ -147,6 +183,10 @@ class Player:
     def destroy(self,card, player):
         card.destroyed()
         (self.playerBoard[player]).remove(card)
+
+    def drawCard(self, location, card):
+        self.screen.blit(self.cardImage,location)
+        self.screen.blit(card.picture,(location[0]+17,location[1]+13))
             
     def endTurn(self):
         #Executes the end of turn functions of the cards in play
@@ -155,23 +195,31 @@ class Player:
         #Changes the current player
         self.playerCurrency[0] += 3
         self.playerCurrency[1] += 3
+        if self.playerMaxMana[player.currentPlayer-1] < 10:
+            self.playerMaxMana[0] += 1
+            self.playerMaxMana[1] += 1
+        self.playerMana[0] = self.playerMaxMana[0]
+        self.playerMana[1] = self.playerMaxMana[1]
+        for i in self.playerBoard[player.currentPlayer-1]:
+            i.canAttack = True
         self.currentPlayer = (self.currentPlayer % 2)+1
         self.genCards(5)
 
-    def play(self, mana, cardPos):
+    def play(self, cardPos):
         card_played = self.playerHand[self.currentPlayer-1][cardPos]
         #Checks if the card you're trying to play costs too much
-        if card_played.mana <= mana:
+        if card_played.mana <= player.playerMana[player.currentPlayer-1]:
             self.playerBoard[self.currentPlayer-1].append((self.playerHand[self.currentPlayer-1]).pop(cardPos))
             card_played.played()
-            mana -= card_played.mana
+            player.playerMana[player.currentPlayer-1] -= card_played.mana
             print("You played a card, costing you " + str(card_played.mana) + " mana")
         else:
-            print("You failed to play a card, it costs " + str(card_played.mana) + " mana, whereas you have only " + str(mana) + " mana.")
-        print("You have " + str(mana) + " mana remaining.")
-        return mana
+            print("You failed to play a card, it costs " + str(card_played.mana) + " mana, whereas you have only " + str(player.playerMana[player.currentPlayer-1]) + " mana.")
+        print("You have " + str(player.playerMana[player.currentPlayer-1]) + " mana remaining.")
 
-                
+    def drawScreen(self):
+        screen.fill((255,255,0))
+        pygame.display.update()
 
 ##class Card:
 ##    def __init__(self,shopCost,name, mana, attack, health, playedFunc = "pass", destroyedFunc = "pass", attackFunc = "pass", endFunc = "pass"):
@@ -193,7 +241,7 @@ class Player:
 
 
 class CardBase:
-    def __init__(self,shopCost,name, mana, attack, health):
+    def __init__(self,shopCost,name, mana, attack, health, picture):
         #for all the func variables the input is a block of text which is passed into generic functions containing only an exec block, this saves me from having to write hundreds of new functions and allows for creations of new cards extremely quickly
         #The function text defaults to a function that does nothing
         self.canAttack = False
@@ -206,6 +254,8 @@ class CardBase:
         self.health = health
         self.attack = attack
         self.shopCost = shopCost
+        self.picture = pygame.image.load(picture)
+        self.picture = pygame.transform.scale(self.picture, (115, 56))
 
     def played(self):
         pass
@@ -221,8 +271,8 @@ class CardBase:
 
 class Ragnaros(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 5, "Ragnaros", 8, 2, 8)
-
+        CardBase.__init__(self, 5, "Ragnaros", 8, 2, 8,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png")
+        
     def played(self):
         playerSwap = (player.currentPlayer % 2)+1
         for i in player.playerBoard[playerSwap-1]:
@@ -232,7 +282,7 @@ class Ragnaros(CardBase):
 
 class Sylvannas(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 4, "Sylvannas", 6, 5, 5)
+        CardBase.__init__(self, 4, "Sylvannas", 6, 5, 5,"C:\\Users\\Gabriel\\Desktop\\Sylvanas.png")
 
     def destroyed(self):
         playerSwap = (player.currentPlayer % 2)+1
@@ -241,7 +291,7 @@ class Sylvannas(CardBase):
 
 class Thaurissan(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 3, "Emperor Thaurissan", 6, 5, 5)
+        CardBase.__init__(self, 3, "Emperor Thaurissan", 6, 5, 5,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png")
 
     def end(self):
         for i in player.playerHand[player.currentPlayer-1]:
@@ -249,14 +299,14 @@ class Thaurissan(CardBase):
 
 class Crusader(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 2, "Burning Crusader", 4, 6, 6)
+        CardBase.__init__(self, 2, "Burning Crusader", 4, 6, 6,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png")
 
     def played(self):
         player.playerHealth[player.currentPlayer-1] -= 5
 
 class Whelp(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Angered Whelp", 2, 1, 2)
+        CardBase.__init__(self, 1, "Angered Whelp", 2, 1, 2,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png")
 
     def destroyed(self):
         for i in player.playerBoard[0]:
@@ -266,7 +316,7 @@ class Whelp(CardBase):
 
 class Ogre(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Boulderfist Ogre", 6, 6, 7)
+        CardBase.__init__(self, 1, "Boulderfist Ogre", 6, 6, 7,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png")
 
 cards = [
         Ragnaros(),
@@ -324,113 +374,126 @@ player.playerCurrency[1] += 2
 ##______________ MAIN GAME LOOP _________________##
 player.playerHand[0].append(cards[0])
 player.genCards(5)
-player.playerMana[0] += 10
-player.playerMana[1] += 10
+player.playerMana[0] = 10
+player.playerMana[1] = 10
+player.playerMaxMana[0] = 10
+player.playerMaxMana[1] = 10
 player.playerCurrency[0] += 10
 player.playerCurrency[1] += 10
 done = False
 while not done:
-    player.boardDisplay()
-    print("__________________________\nPlayer " + str(player.currentPlayer) + "'s Turn\n__________________________\nYou may:")
-    pprint.pprint(["1. Play a minion","2. View the shop", "3. Attack with a minion", "4. End your turn", "5. Combine Cards"])
-    choice = 0
-    while choice not in [1,2,3,4,5]:
-        try:
-            choice = int(input("Please input your choice [1,2,3,4 or 5]: "))
-        except:
-            print("Invalid input")
-    if choice == 1:
-        counter = 0
-        for i in player.playerHand[player.currentPlayer-1]:
-            print(str(counter) + ". " + i.name)
-            counter += 1
-        print(str(counter) + ". Back")
-        playChoice = 999
-        while playChoice not in range(0,len(player.playerHand[player.currentPlayer-1])+1):
-            try:
-                playChoice = int(input("please input the card you would like to play: "))
-            except:
-                print("invalid choice")
-        #print(len(player.playerHand[player.currentPlayer-1]))
-        if playChoice != len(player.playerHand[player.currentPlayer-1]):
-            player.play(player.playerMana[player.currentPlayer-1],playChoice)
-    elif choice == 2:
-        counter = 0
-        print("The shop has:")
-        for i in player.forSale:
-            print(str(counter)+".",i.name)
-            counter += 1
-        print(str(counter) + ". Back")
-        purchaseChoice = 255
-        while purchaseChoice not in range(0,len(player.forSale)+1):
-            try:
-                purchaseChoice = int(input("please input the card you would like to buy: "))
-            except:
-                print("invalid choice")
-        if purchaseChoice != len(player.forSale):
-            player.buyCard(purchaseChoice)
-    elif choice == 3:
-        counter = 0
-        print("You have " + str(len(player.playerBoard[player.currentPlayer-1])) + " minions, of which:")
-        for i in player.playerBoard[player.currentPlayer-1]:
-            if i.canAttack:
-                print(i.name)
-        print("Can attack")
-        for i in player.playerBoard[player.currentPlayer-1]:
-            print(str(counter) + ". " + i.name)
-            counter += 1
-        print(str(counter) + ". Back")
-        attackChoice = 255
-        while attackChoice not in range(0,len(player.playerBoard[player.currentPlayer-1])+1):
-            try:
-                attackChoice = int(input("please input the card you would like to attack with: "))
-            except:
-                print("invalid choice")
-        enemyChoice = 255
-        if player.currentPlayer == 2:
-            playerSwap = 1
-        else:
-            playerSwap = 2
-        counter = 0
-        for i in player.playerBoard[playerSwap-1]:
-            print(str(counter) + ". " + i.name)
-        while enemyChoice not in range(0,len(player.playerBoard[playerSwap-1])+1):
-            try:
-                enemyChoice = int(input("please input the card you would like to attack: "))
-            except:
-                print("invalid choice")
-        skip = False
-        try:
-            if len(player.playerBoard[playerSwap-1]) == 0 and player.playerBoard[player.currentPlayer-1][attackChoice].canAttack:
-                player.playerHealth[playerSwap-1] -= player.playerBoard[player.currentPlayer-1][attackChoice].attack
-                skip = True
-            elif not player.playerBoard[player.currentPlayer-1][attackChoice].canAttack:
-                print("That minion cannot attack right now")
-                skip = True
-        except:
-            skip = True
-        if attackChoice != len(player.playerBoard[player.currentPlayer-1]) and not skip:
-            player.attack(player.playerBoard[player.currentPlayer-1][attackChoice],player.playerBoard[playerSwap-1][enemyChoice])
-    elif choice == 4:
-        player.endTurn()
-    elif choice == 5:
-        counter = 0
-        print("You have the following cards, choose one which you have at least 3 of to combine:")
-        for i in player.playerHand[player.currentPlayer-1]:
-            print(str(counter)+".",i.name)
-            counter += 1
-        print(str(counter) + ". Back")
-        combinationChoice = 255
-        while combinationChoice not in range(0,len(player.playerHand[player.currentPlayer-1])+1):
-            try:
-                combinationChoice = int(input("please input the card you would like to combine: "))
-            except:
-                print("invalid choice")
-        if combinationChoice != len(player.playerHand[player.currentPlayer-1]):
-            player.combineCards(player.playerHand[player.currentPlayer-1][combinationChoice])
+    #player.screen.blit(cards[0].picture,(10,110))
+    mousepos = pygame.mouse.get_pos()
+    player.screen.fill((0,0,0))
+    player.drawCard(mousepos,cards[0])
+    player.drawCard((10,10),cards[1])
+    pygame.display.update()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            done = True
+    #player.boardDisplay()
+    
+##    print("__________________________\nPlayer " + str(player.currentPlayer) + "'s Turn\n__________________________\nYou may:")
+##    pprint.pprint(["1. Play a minion","2. View the shop", "3. Attack with a minion", "4. End your turn", "5. Combine Cards"])
+##    choice = 0
+##    while choice not in [1,2,3,4,5]:
+##        try:
+##            choice = int(input("Please input your choice [1,2,3,4 or 5]: "))
+##        except:
+##            print("Invalid input")
+##    if choice == 1:
+##        counter = 0
+##        for i in player.playerHand[player.currentPlayer-1]:
+##            print(str(counter) + ". " + i.name)
+##            counter += 1
+##        print(str(counter) + ". Back")
+##        playChoice = 999
+##        while playChoice not in range(0,len(player.playerHand[player.currentPlayer-1])+1):
+##            try:
+##                playChoice = int(input("please input the card you would like to play: "))
+##            except:
+##                print("invalid choice")
+##        #print(len(player.playerHand[player.currentPlayer-1]))
+##        if playChoice != len(player.playerHand[player.currentPlayer-1]):
+##            player.play(playChoice)
+##    elif choice == 2:
+##        counter = 0
+##        print("The shop has:")
+##        for i in player.forSale:
+##            print(str(counter)+".",i.name)
+##            counter += 1
+##        print(str(counter) + ". Back")
+##        purchaseChoice = 255
+##        while purchaseChoice not in range(0,len(player.forSale)+1):
+##            try:
+##                purchaseChoice = int(input("please input the card you would like to buy: "))
+##            except:
+##                print("invalid choice")
+##        if purchaseChoice != len(player.forSale):
+##            player.buyCard(purchaseChoice)
+##    elif choice == 3:
+##        counter = 0
+##        print("You have " + str(len(player.playerBoard[player.currentPlayer-1])) + " minions, of which:")
+##        for i in player.playerBoard[player.currentPlayer-1]:
+##            if i.canAttack:
+##                print(i.name)
+##        print("Can attack")
+##        for i in player.playerBoard[player.currentPlayer-1]:
+##            print(str(counter) + ". " + i.name)
+##            counter += 1
+##        print(str(counter) + ". Back")
+##        attackChoice = 255
+##        while attackChoice not in range(0,len(player.playerBoard[player.currentPlayer-1])+1):
+##            try:
+##                attackChoice = int(input("please input the card you would like to attack with: "))
+##            except:
+##                print("invalid choice")
+##        enemyChoice = 255
+##        if player.currentPlayer == 2:
+##            playerSwap = 1
+##        else:
+##            playerSwap = 2
+##        counter = 0
+##        for i in player.playerBoard[playerSwap-1]:
+##            print(str(counter) + ". " + i.name)
+##        while enemyChoice not in range(0,len(player.playerBoard[playerSwap-1])+1):
+##            try:
+##                enemyChoice = int(input("please input the card you would like to attack: "))
+##            except:
+##                print("invalid choice")
+##        skip = False
+##        try:
+##            if len(player.playerBoard[playerSwap-1]) == 0 and player.playerBoard[player.currentPlayer-1][attackChoice].canAttack:
+##                player.playerHealth[playerSwap-1] -= player.playerBoard[player.currentPlayer-1][attackChoice].attack
+##                player.playerBoard[player.currentPlayer-1][attackChoice].canAttack = False
+##                skip = True
+##            elif not player.playerBoard[player.currentPlayer-1][attackChoice].canAttack:
+##                print("That minion cannot attack right now")
+##                skip = True
+##        except:
+##            skip = True
+##        if attackChoice != len(player.playerBoard[player.currentPlayer-1]) and not skip:
+##            player.attack(player.playerBoard[player.currentPlayer-1][attackChoice],player.playerBoard[playerSwap-1][enemyChoice])
+##    elif choice == 4:
+##        player.endTurn()
+##    elif choice == 5:
+##        counter = 0
+##        print("You have the following cards, choose one which you have at least 3 of to combine:")
+##        for i in player.playerHand[player.currentPlayer-1]:
+##            print(str(counter)+".",i.name)
+##            counter += 1
+##        print(str(counter) + ". Back")
+##        combinationChoice = 255
+##        while combinationChoice not in range(0,len(player.playerHand[player.currentPlayer-1])+1):
+##            try:
+##                combinationChoice = int(input("please input the card you would like to combine: "))
+##            except:
+##                print("invalid choice")
+##        if combinationChoice != len(player.playerHand[player.currentPlayer-1]):
+##            player.combineCards(player.playerHand[player.currentPlayer-1][combinationChoice])
                     
-    if player.playerHealth[0] <= 0 or player.playerHealth[1] <= 0:
-        done = True
+    #if player.playerHealth[0] <= 0 or player.playerHealth[1] <= 0:
+    #    done = True
         
     
     
