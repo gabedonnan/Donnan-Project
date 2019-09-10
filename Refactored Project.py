@@ -55,8 +55,10 @@ class Buy(Button):
         Button.__init__(self,(30,30),(10,15),"C:\\Users\\Gabriel\\Desktop\\Buy.png")
 
     def press(self):
+        xLoc=(player.displayInfo.current_w)/6
         for i in player.forSale:
-            pass #Add code to draw each card in the shop on the screen, maybe adding smoother animations later
+            player.drawCard((xLoc,(player.displayInfo.current_h)/2),i)
+            xLoc += (player.displayInfo.current_w)/6
 
 class Player:
     displayInfo = pygame.display.Info()
@@ -185,8 +187,13 @@ class Player:
         (self.playerBoard[player]).remove(card)
 
     def drawCard(self, location, card):
+        #centres the image of the card instead of using the top left
+        location = (location[0]-74,location[1]-96)
         self.screen.blit(self.cardImage,location)
         self.screen.blit(card.picture,(location[0]+17,location[1]+13))
+        self.screen.blit(card.nameText,(location[0]+17,location[1]+86))
+        self.screen.blit(card.hpText,(location[0]+112,location[1]+79))
+        self.screen.blit(card.atkText,(location[0]+112,location[1]+100))
             
     def endTurn(self):
         #Executes the end of turn functions of the cards in play
@@ -241,7 +248,7 @@ class Player:
 
 
 class CardBase:
-    def __init__(self,shopCost,name, mana, attack, health, picture):
+    def __init__(self,shopCost,name, mana, attack, health, picture, text):
         #for all the func variables the input is a block of text which is passed into generic functions containing only an exec block, this saves me from having to write hundreds of new functions and allows for creations of new cards extremely quickly
         #The function text defaults to a function that does nothing
         self.canAttack = False
@@ -256,6 +263,26 @@ class CardBase:
         self.shopCost = shopCost
         self.picture = pygame.image.load(picture)
         self.picture = pygame.transform.scale(self.picture, (115, 56))
+        self.font = pygame.font.SysFont('arial', 16)
+        self.font.set_bold(True)
+        self.nameText = self.font.render(name, True, (255,255,255))
+        self.hpText = self.font.render(str(self.health), True, (255,255,255))
+        self.atkText = self.font.render(str(self.attack), True, (255,255,255))
+        self.font2 = pygame.font.SysFont('arial', int((128/len(text.split("")))))
+        self.text = text
+        self.textText = [[]]
+        wordLen = 0
+        count = 0
+        for word in self.text.split(" "):
+            wordLen += len(word)
+            self.textText[count].append(word)
+            if wordLen > 15 and ("." not in word) :
+                count += 1
+                wordLen = 0
+                self.textText.append([])
+        print(self.textText)
+##        self.textRect = self.nameText.get_rect()
+##        self.textRect.center = (self.textRect[0]//2,self.textRect[1]//2)
 
     def played(self):
         pass
@@ -271,7 +298,7 @@ class CardBase:
 
 class Ragnaros(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 5, "Ragnaros", 8, 2, 8,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png")
+        CardBase.__init__(self, 5, "Ragnaros", 8, 2, 8,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png","When played deals 8 damage to all enemy cards on the battlefield.")
         
     def played(self):
         playerSwap = (player.currentPlayer % 2)+1
@@ -282,7 +309,7 @@ class Ragnaros(CardBase):
 
 class Sylvannas(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 4, "Sylvannas", 6, 5, 5,"C:\\Users\\Gabriel\\Desktop\\Sylvanas.png")
+        CardBase.__init__(self, 4, "Sylvannas", 6, 5, 5,"C:\\Users\\Gabriel\\Desktop\\Sylvanas.png","When destroyed this steals a random card from your opponents side of the battlefield.")
 
     def destroyed(self):
         playerSwap = (player.currentPlayer % 2)+1
@@ -291,7 +318,7 @@ class Sylvannas(CardBase):
 
 class Thaurissan(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 3, "Emperor Thaurissan", 6, 5, 5,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png")
+        CardBase.__init__(self, 3, "Thaurissan", 6, 5, 5,"C:\\Users\\Gabriel\\Desktop\\Thaurissan.jpg","At the end of your turn this reduces the cost of all cards in your hand by 1.")
 
     def end(self):
         for i in player.playerHand[player.currentPlayer-1]:
@@ -299,14 +326,14 @@ class Thaurissan(CardBase):
 
 class Crusader(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 2, "Burning Crusader", 4, 6, 6,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png")
+        CardBase.__init__(self, 2, "Crusader", 4, 6, 6,"C:\\Users\\Gabriel\\Desktop\\Crusader.jpg","When played this deals 5 damage to your player.")
 
     def played(self):
         player.playerHealth[player.currentPlayer-1] -= 5
 
 class Whelp(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Angered Whelp", 2, 1, 2,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png")
+        CardBase.__init__(self, 1, "Whelp", 2, 1, 2,"C:\\Users\\Gabriel\\Desktop\\deathwing.jpg","When destroyed this deals 2 damage to all other cards on the battlefield.")
 
     def destroyed(self):
         for i in player.playerBoard[0]:
@@ -316,7 +343,7 @@ class Whelp(CardBase):
 
 class Ogre(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Boulderfist Ogre", 6, 6, 7,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png")
+        CardBase.__init__(self, 1, "Ogre", 6, 6, 7,"C:\\Users\\Gabriel\\Desktop\\Oger.jpg"," ")
 
 cards = [
         Ragnaros(),
@@ -381,12 +408,14 @@ player.playerMaxMana[1] = 10
 player.playerCurrency[0] += 10
 player.playerCurrency[1] += 10
 done = False
+buyButton = Buy()
 while not done:
     #player.screen.blit(cards[0].picture,(10,110))
     mousepos = pygame.mouse.get_pos()
     player.screen.fill((0,0,0))
     player.drawCard(mousepos,cards[0])
-    player.drawCard((10,10),cards[1])
+    #player.drawCard((10,10),cards[1])
+    buyButton.press()
     pygame.display.update()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
