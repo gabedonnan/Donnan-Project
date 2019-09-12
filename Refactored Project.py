@@ -18,9 +18,9 @@ pygame.init()
 #Code to set up the pytorch environment
 ##device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ##Transition = namedtuple('Transition',('state', 'action', 'next_state', 'reward'))
-###________________________________#
-##### MACHINE LEARNING CODE HERE ###
-###________________________________#
+#________________________________#
+### MACHINE LEARNING CODE HERE ###
+#________________________________#
    
 
 #_______________________________#
@@ -50,7 +50,7 @@ class Combine(Button):
     def press(self):
         pass #Add something to choose a card and call player.combineCard() with that card
 
-class Buy(Button):
+class ShowShop(Button):
     def __init__(self):
         Button.__init__(self,(30,30),(10,15),"C:\\Users\\Gabriel\\Desktop\\Buy.png")
 
@@ -59,6 +59,14 @@ class Buy(Button):
         for i in player.forSale:
             player.drawCard((xLoc,(player.displayInfo.current_h)/2),i)
             xLoc += (player.displayInfo.current_w)/6
+    
+
+class Buy(Button):
+    def __init__(self):
+        Button.__init__(self,(30,30),(10,15),"C:\\Users\\Gabriel\\Desktop\\Buy.png")
+
+    def press(self):
+        pass #Add something to buy the card object that the button is currently underneath, maybe link it to the card somehow
 
 class Player:
     displayInfo = pygame.display.Info()
@@ -111,9 +119,12 @@ class Player:
         
     def genCards(self, amount):
         displaylist = []
+        cards = []
         #randomly generates (amount) cards from the globalCardList (list of all possible cards) and prints their name, will display them for purchase later and replace card drawing
+        for card in self.globalCardList:
+            cards.append(card())
         for i in range(amount):
-            displaylist.append(random.choice(self.globalCardList))
+            displaylist.append(random.choice(cards))
         self.forSale = displaylist
         for i in self.forSale:
             print(i.name)
@@ -126,41 +137,6 @@ class Player:
             
         else:
             print("Oops, looks like you dont have enough gold to purchase that card right now!")
-                
-    def boardDisplay(self):
-        #Update this with pygame stuff later, simple visualiser for logic for now
-        print("\n[][] Player One Board [][]:\n")
-        for i in self.playerBoard[0]:
-            print("[] " + i.name + f" [{i.mana}/{i.attack}/{i.health}]")
-        print("\n[][] Player One Hand [][]:\n")
-        for i in self.playerHand[0]:
-            print("[] " + i.name + f" [{i.mana}/{i.attack}/{i.health}]")
-        print("\n[][] Player Two Board [][]:\n")
-        for i in self.playerBoard[1]:
-            print("[] " + i.name + f" [{i.mana}/{i.attack}/{i.health}]")
-        print("\n[][] Player Two Hand [][]:\n")
-        for i in self.playerHand[1]:
-            print("[] " + i.name + f" [{i.mana}/{i.attack}/{i.health}]")
-        print(f"Player one has {player.playerMana[0]} mana and {player.playerCurrency[0]} currency\nPlayer two has {player.playerMana[1]} mana and {player.playerCurrency[1]} currency")
-        print(f"Player one has {player.playerHealth[0]} health and player two has {player.playerHealth[1]} health")
-        
-    #def draw(self, amount, player):
-    #    if player == 1:
-    #        if len(self.playerOneDeck) < amount:
-    #            amount = len(self.playerOneDeck)
-    #        for count in range(amount):
-    #            card_drawn = self.playerOneDeck[0]
-    #            self.playerOneDeck = self.playerOneDeck[1:]
-    #            self.playerOneHand.append(card_drawn)
-    #        print("Player 1 drew " + str(amount) + " cards")
-    #    else:
-    #        if len(self.playerTwoDeck) < amount:
-    #            amount = len(self.playerTwoDeck)
-    #        for count in range(amount):
-    #            card_drawn = self.playerTwoDeck[0]
-    #            self.playerTwoDeck = self.playerTwoDeck[1:]
-    #            self.playerTwoHand.append(card_drawn)
-    #        print("Player 2 drew " + str(amount) + " cards")
 
     def attack(self, card1, card2):
         self.boardDisplay()
@@ -228,24 +204,6 @@ class Player:
         screen.fill((255,255,0))
         pygame.display.update()
 
-##class Card:
-##    def __init__(self,shopCost,name, mana, attack, health, playedFunc = "pass", destroyedFunc = "pass", attackFunc = "pass", endFunc = "pass"):
-##        #for all the func variables the input is a block of text which is passed into generic functions containing only an exec block, this saves me from having to write hundreds of new functions and allows for creations of new cards extremely quickly
-##        #The function text defaults to a function that does nothing
-##        self.canAttack = False
-##        self.name = name
-##        self.playedFunc = playedFunc
-##        self.destroyedFunc = destroyedFunc
-##        self.attackFunc = attackFunc
-##        self.endFunc = endFunc
-##        self.mana = mana
-##        self.health = health
-##        self.attack = attack
-##        self.shopCost = shopCost
-##
-##    def executeFunction(self,text, playerNum):
-##        exec(text)
-
 
 class CardBase:
     def __init__(self,shopCost,name, mana, attack, health, picture, text):
@@ -268,21 +226,25 @@ class CardBase:
         self.nameText = self.font.render(name, True, (255,255,255))
         self.hpText = self.font.render(str(self.health), True, (255,255,255))
         self.atkText = self.font.render(str(self.attack), True, (255,255,255))
-        self.font2 = pygame.font.SysFont('arial', int((128/len(text.split("")))))
+        #Font scaled for the text of each card vv vv
+        self.font2 = pygame.font.SysFont('arial', int((128/len(text.split(" ")))))
         self.text = text
-        self.textText = [[]]
+        textSplit = [[]]
         wordLen = 0
         count = 0
         for word in self.text.split(" "):
             wordLen += len(word)
-            self.textText[count].append(word)
-            if wordLen > 15 and ("." not in word) :
+            textSplit[count].append(word)
+            if wordLen > 15 and ("." not in word):
                 count += 1
                 wordLen = 0
-                self.textText.append([])
-        print(self.textText)
-##        self.textRect = self.nameText.get_rect()
-##        self.textRect.center = (self.textRect[0]//2,self.textRect[1]//2)
+                textSplit.append([])
+        print(textSplit)
+        count = 0
+        self.textDisplay = []
+        for line in textSplit:
+            #Transforms the split text into font form for rendering on the card in a more legible way
+            self.textDisplay.append(self.font2.render(" ".join(line), True, (255,255,255)))
 
     def played(self):
         pass
@@ -343,9 +305,23 @@ class Whelp(CardBase):
 
 class Ogre(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Ogre", 6, 6, 7,"C:\\Users\\Gabriel\\Desktop\\Oger.jpg"," ")
+        CardBase.__init__(self, 1, "Ogre", 5, 2, 4,"C:\\Users\\Gabriel\\Desktop\\Oger.jpg","When played this summons a copy of itself.")
 
+    def played(self):
+        player.playerBoard.append(Ogre())
+
+#This list stores the references to the classes in order that new objects can be created instead of duplicating old ones, meaning that specific instances of objects can be changed
 cards = [
+        Ragnaros,
+        Sylvannas,
+        Thaurissan,
+        Crusader,
+        Whelp,
+        Ogre
+    ]
+
+#This list is to help speed up graphical things as it will not have to repeatedly declare the objects to render
+declaredCards = [
         Ragnaros(),
         Sylvannas(),
         Thaurissan(),
@@ -354,43 +330,6 @@ cards = [
         Ogre()
     ]
 
-#Below are card definitions
-##cards = []
-#Deals 8 damage to all minions on your opponent's board on play
-##cards.append(Card(4,"Ragnaros the Firelord" ,8,2,8,playedFunc = """
-##playerSwap = (player.currentPlayer % 2)+1
-##for i in player.playerBoard[playerSwap-1]:
-##    i.health -= 8
-##    if i.health <= 0:
-##        player.destroy(i,playerSwap-1)"""))
-##
-###Steals a random minion from your opponents board on death, uses an almost unreadable oneliner to do this for efficiency
-##cards.append(Card(3,"Sylvannas windrunner",6,5,5, destroyedFunc = """if playerNum == 1 and player.playerTwoBoard:
-##    (player.playerOneBoard).append((player.playerTwoBoard).pop(random.randint(0,len(player.playerBoard[player.currentPlayer-1])-1)))
-##elif player.playerOneBoard and playerNum == 2:
-##    player.playerTwoBoard.append(random.choice(player.playerOneBoard).pop)"""))
-##
-###Reduces the cost of all cards in your hand at the end of each turn
-##cards.append(Card(2,"Emperor Thaurissan",6,5,5, endFunc = """if playerNum == 1:
-##    for i in player.playerOneHand:
-##        i.mana -= 1
-##else:
-##    for i in player.playerTwoHand:
-##        i.mana -= 1"""))
-##
-##cards.append(Card(1,"Bolderfist Oger",6,6,7))
-##
-###Deals 5 damage to the player playing it on play
-##cards.append(Card(2,"Crusader",4,6,6,playedFunc = """if playerNum == 1:
-##    player.playerOneHealth -= 5
-##else:
-##    player.playerTwoHealth -= 5"""))
-##
-###On death deals 2 damage to all minions on the board
-##cards.append(Card(1,"Angered Whelp", 2, 1,2, destroyedFunc = """for i in player.playerOneBoard:
-##    i.health -= 2
-##for i in player.playerTwoBoard:
-##    i.health -= 2"""))
 player = Player(cards)
 #Gives the second player a small headstart as they are naturally at a disadvantage due to how turn based games work
 player.playerCurrency[1] += 2
@@ -399,7 +338,7 @@ player.playerCurrency[1] += 2
 #For any variable "player" or "playerNum" within a function this refers to the player *in control* of the thing making the effect, not necessarily the player being affected
 
 ##______________ MAIN GAME LOOP _________________##
-player.playerHand[0].append(cards[0])
+player.playerHand[0].append(cards[0]())
 player.genCards(5)
 player.playerMana[0] = 10
 player.playerMana[1] = 10
@@ -413,7 +352,7 @@ while not done:
     #player.screen.blit(cards[0].picture,(10,110))
     mousepos = pygame.mouse.get_pos()
     player.screen.fill((0,0,0))
-    player.drawCard(mousepos,cards[0])
+    player.drawCard(mousepos,declaredCards[0])
     #player.drawCard((10,10),cards[1])
     buyButton.press()
     pygame.display.update()
@@ -421,108 +360,6 @@ while not done:
         if event.type == pygame.QUIT:
             done = True
     #player.boardDisplay()
-    
-##    print("__________________________\nPlayer " + str(player.currentPlayer) + "'s Turn\n__________________________\nYou may:")
-##    pprint.pprint(["1. Play a minion","2. View the shop", "3. Attack with a minion", "4. End your turn", "5. Combine Cards"])
-##    choice = 0
-##    while choice not in [1,2,3,4,5]:
-##        try:
-##            choice = int(input("Please input your choice [1,2,3,4 or 5]: "))
-##        except:
-##            print("Invalid input")
-##    if choice == 1:
-##        counter = 0
-##        for i in player.playerHand[player.currentPlayer-1]:
-##            print(str(counter) + ". " + i.name)
-##            counter += 1
-##        print(str(counter) + ". Back")
-##        playChoice = 999
-##        while playChoice not in range(0,len(player.playerHand[player.currentPlayer-1])+1):
-##            try:
-##                playChoice = int(input("please input the card you would like to play: "))
-##            except:
-##                print("invalid choice")
-##        #print(len(player.playerHand[player.currentPlayer-1]))
-##        if playChoice != len(player.playerHand[player.currentPlayer-1]):
-##            player.play(playChoice)
-##    elif choice == 2:
-##        counter = 0
-##        print("The shop has:")
-##        for i in player.forSale:
-##            print(str(counter)+".",i.name)
-##            counter += 1
-##        print(str(counter) + ". Back")
-##        purchaseChoice = 255
-##        while purchaseChoice not in range(0,len(player.forSale)+1):
-##            try:
-##                purchaseChoice = int(input("please input the card you would like to buy: "))
-##            except:
-##                print("invalid choice")
-##        if purchaseChoice != len(player.forSale):
-##            player.buyCard(purchaseChoice)
-##    elif choice == 3:
-##        counter = 0
-##        print("You have " + str(len(player.playerBoard[player.currentPlayer-1])) + " minions, of which:")
-##        for i in player.playerBoard[player.currentPlayer-1]:
-##            if i.canAttack:
-##                print(i.name)
-##        print("Can attack")
-##        for i in player.playerBoard[player.currentPlayer-1]:
-##            print(str(counter) + ". " + i.name)
-##            counter += 1
-##        print(str(counter) + ". Back")
-##        attackChoice = 255
-##        while attackChoice not in range(0,len(player.playerBoard[player.currentPlayer-1])+1):
-##            try:
-##                attackChoice = int(input("please input the card you would like to attack with: "))
-##            except:
-##                print("invalid choice")
-##        enemyChoice = 255
-##        if player.currentPlayer == 2:
-##            playerSwap = 1
-##        else:
-##            playerSwap = 2
-##        counter = 0
-##        for i in player.playerBoard[playerSwap-1]:
-##            print(str(counter) + ". " + i.name)
-##        while enemyChoice not in range(0,len(player.playerBoard[playerSwap-1])+1):
-##            try:
-##                enemyChoice = int(input("please input the card you would like to attack: "))
-##            except:
-##                print("invalid choice")
-##        skip = False
-##        try:
-##            if len(player.playerBoard[playerSwap-1]) == 0 and player.playerBoard[player.currentPlayer-1][attackChoice].canAttack:
-##                player.playerHealth[playerSwap-1] -= player.playerBoard[player.currentPlayer-1][attackChoice].attack
-##                player.playerBoard[player.currentPlayer-1][attackChoice].canAttack = False
-##                skip = True
-##            elif not player.playerBoard[player.currentPlayer-1][attackChoice].canAttack:
-##                print("That minion cannot attack right now")
-##                skip = True
-##        except:
-##            skip = True
-##        if attackChoice != len(player.playerBoard[player.currentPlayer-1]) and not skip:
-##            player.attack(player.playerBoard[player.currentPlayer-1][attackChoice],player.playerBoard[playerSwap-1][enemyChoice])
-##    elif choice == 4:
-##        player.endTurn()
-##    elif choice == 5:
-##        counter = 0
-##        print("You have the following cards, choose one which you have at least 3 of to combine:")
-##        for i in player.playerHand[player.currentPlayer-1]:
-##            print(str(counter)+".",i.name)
-##            counter += 1
-##        print(str(counter) + ". Back")
-##        combinationChoice = 255
-##        while combinationChoice not in range(0,len(player.playerHand[player.currentPlayer-1])+1):
-##            try:
-##                combinationChoice = int(input("please input the card you would like to combine: "))
-##            except:
-##                print("invalid choice")
-##        if combinationChoice != len(player.playerHand[player.currentPlayer-1]):
-##            player.combineCards(player.playerHand[player.currentPlayer-1][combinationChoice])
-                    
-    #if player.playerHealth[0] <= 0 or player.playerHealth[1] <= 0:
-    #    done = True
-        
+
     
     
