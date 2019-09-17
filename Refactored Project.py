@@ -21,7 +21,7 @@ pygame.init()
 #________________________________#
 ### MACHINE LEARNING CODE HERE ###
 #________________________________#
-   
+
 
 #_______________________________#
 ### END MACHINE LEARNING CODE ###
@@ -35,6 +35,10 @@ class Button:
 
     def press(self):
         pass
+
+    def draw(self):
+        player.screen.blit(self.picture,self.coords)
+
 
 class EndTurn(Button):
     def __init__(self):
@@ -53,24 +57,29 @@ class Combine(Button):
 class ShowShop(Button):
     def __init__(self):
         Button.__init__(self,(30,30),(10,15),"C:\\Users\\Gabriel\\Desktop\\Buy.png")
-
+        self.buttons = []
     def press(self):
-        xLoc=(player.displayInfo.current_w)/6
+        buttons = []
+        xLoc=(player.screen.get_width())/6
         for i in player.forSale:
-            player.drawCard((xLoc,(player.displayInfo.current_h)/2),i)
-            xLoc += (player.displayInfo.current_w)/6
+            player.drawCard((xLoc,(player.screen.get_height())/2),i)
+            buttons.append(Buy(i,((xLoc-30,((player.screen.get_height())/2)+200))))
+            xLoc += (player.screen.get_width())/6
+        for button in buttons:
+            button.draw()
+        self.buttons = buttons
     
-
 class Buy(Button):
-    def __init__(self):
-        Button.__init__(self,(30,30),(10,15),"C:\\Users\\Gabriel\\Desktop\\Buy.png")
+    def __init__(self, card, coords):
+        Button.__init__(self,coords,(60,27),"C:\\Users\\Gabriel\\Desktop\\Buy.png")
+        self.card = card
 
     def press(self):
-        pass #Add something to buy the card object that the button is currently underneath, maybe link it to the card somehow
+        player.buyCard(self.card)
 
 class Player:
     displayInfo = pygame.display.Info()
-    screen = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h))
+    screen = pygame.display.set_mode((displayInfo.current_w-300, displayInfo.current_h-300))
     playerMaxMana = [None,None]
     playerHealth = [None,None]
     playerHand = [None,None]
@@ -129,17 +138,15 @@ class Player:
         for i in self.forSale:
             print(i.name)
 
-    def buyCard(self, cardPos):
-        if self.playerCurrency[self.currentPlayer-1] >= self.forSale[cardPos].shopCost:
-            self.playerCurrency[self.currentPlayer-1] -= self.forSale[cardPos].shopCost
+    def buyCard(self, card):
+        if self.playerCurrency[self.currentPlayer-1] >= card.shopCost:
+            self.playerCurrency[self.currentPlayer-1] -= card.shopCost
             #Adds the purchased card to the purchasinc player's hand and removes it from the shop if they have enough currency to buy it
-            self.playerHand[self.currentPlayer-1].append(self.forSale.pop(cardPos))
-            
+            self.playerHand[self.currentPlayer-1].append(card)    
         else:
             print("Oops, looks like you dont have enough gold to purchase that card right now!")
 
     def attack(self, card1, card2):
-        self.boardDisplay()
         if card1.canAttack:
             card1.attacking()
             card2.health -= card1.attack
@@ -170,6 +177,10 @@ class Player:
         self.screen.blit(card.nameText,(location[0]+17,location[1]+86))
         self.screen.blit(card.hpText,(location[0]+112,location[1]+79))
         self.screen.blit(card.atkText,(location[0]+112,location[1]+100))
+        addFactor = 125
+        for line in card.textDisplay:
+            self.screen.blit(line,(location[0]+17,location[1]+addFactor))
+            addFactor += 11
             
     def endTurn(self):
         #Executes the end of turn functions of the cards in play
@@ -201,20 +212,20 @@ class Player:
         print("You have " + str(player.playerMana[player.currentPlayer-1]) + " mana remaining.")
 
     def drawScreen(self):
-        screen.fill((255,255,0))
+        self.screen.fill((255,255,0))
         pygame.display.update()
 
+    def boardDisplay(self):
+        size = self.screen.get_size()
+        location = 115
+        for card in self.playerHand[self.currentPlayer-1]:
+            self.drawCard((location,size[1]-115),card)
+            location += 56
 
 class CardBase:
     def __init__(self,shopCost,name, mana, attack, health, picture, text):
-        #for all the func variables the input is a block of text which is passed into generic functions containing only an exec block, this saves me from having to write hundreds of new functions and allows for creations of new cards extremely quickly
-        #The function text defaults to a function that does nothing
         self.canAttack = False
         self.name = name
-##        self.playedFunc = playedFunc
-##        self.destroyedFunc = destroyedFunc
-##        self.attackFunc = attackFunc
-##        self.endFunc = endFunc
         self.mana = mana
         self.health = health
         self.attack = attack
@@ -227,7 +238,7 @@ class CardBase:
         self.hpText = self.font.render(str(self.health), True, (255,255,255))
         self.atkText = self.font.render(str(self.attack), True, (255,255,255))
         #Font scaled for the text of each card vv vv
-        self.font2 = pygame.font.SysFont('arial', int((128/len(text.split(" ")))))
+        self.font2 = pygame.font.SysFont('arial', int((180/len(text.split(" ")))))
         self.text = text
         textSplit = [[]]
         wordLen = 0
@@ -235,11 +246,10 @@ class CardBase:
         for word in self.text.split(" "):
             wordLen += len(word)
             textSplit[count].append(word)
-            if wordLen > 15 and ("." not in word):
+            if wordLen > 12 and ("." not in word):
                 count += 1
                 wordLen = 0
                 textSplit.append([])
-        print(textSplit)
         count = 0
         self.textDisplay = []
         for line in textSplit:
@@ -288,7 +298,7 @@ class Thaurissan(CardBase):
 
 class Crusader(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 2, "Crusader", 4, 6, 6,"C:\\Users\\Gabriel\\Desktop\\Crusader.jpg","When played this deals 5 damage to your player.")
+        CardBase.__init__(self, 2, "Crusader", 4, 6, 6,"C:\\Users\\Gabriel\\Desktop\\Crusader.jpg","When this card is played this deals 5 damage to your player.")
 
     def played(self):
         player.playerHealth[player.currentPlayer-1] -= 5
@@ -305,10 +315,10 @@ class Whelp(CardBase):
 
 class Ogre(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Ogre", 5, 2, 4,"C:\\Users\\Gabriel\\Desktop\\Oger.jpg","When played this summons a copy of itself.")
+        CardBase.__init__(self, 1, "Ogre", 5, 2, 4,"C:\\Users\\Gabriel\\Desktop\\Oger.jpg","When this card is played this summons a copy of itself.")
 
     def played(self):
-        player.playerBoard.append(Ogre())
+        player.playerBoard[player.currentPlayer-1].append(Ogre())
 
 #This list stores the references to the classes in order that new objects can be created instead of duplicating old ones, meaning that specific instances of objects can be changed
 cards = [
@@ -339,6 +349,7 @@ player.playerCurrency[1] += 2
 
 ##______________ MAIN GAME LOOP _________________##
 player.playerHand[0].append(cards[0]())
+player.playerHand[0].append(cards[1]())
 player.genCards(5)
 player.playerMana[0] = 10
 player.playerMana[1] = 10
@@ -347,14 +358,20 @@ player.playerMaxMana[1] = 10
 player.playerCurrency[0] += 10
 player.playerCurrency[1] += 10
 done = False
-buyButton = Buy()
+shopButton = ShowShop()
 while not done:
     #player.screen.blit(cards[0].picture,(10,110))
     mousepos = pygame.mouse.get_pos()
     player.screen.fill((0,0,0))
     player.drawCard(mousepos,declaredCards[0])
+    for i in shopButton.buttons:
+        temprect = i.picture.get_rect()
+        print(temprect)
+        if temprect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
+            i.press()
     #player.drawCard((10,10),cards[1])
-    buyButton.press()
+    shopButton.press()
+    player.boardDisplay()
     pygame.display.update()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
