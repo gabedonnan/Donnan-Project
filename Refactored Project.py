@@ -1,4 +1,4 @@
-import random, pprint, pygame
+import random, pprint, pygame, time
 from enum import Enum
 import numpy as np
 import matplotlib
@@ -56,14 +56,23 @@ class Combine(Button):
 
 class ShowShop(Button):
     def __init__(self):
-        Button.__init__(self,(30,30),(10,15),"C:\\Users\\Gabriel\\Desktop\\Buy.png")
+        Button.__init__(self,(15,15),(100,38),"C:\\Users\\Gabriel\\Desktop\\Shop.png")
         self.buttons = []
+        self.clickRect = pygame.Rect((15,15),(100,38))
+        self.pressed = False
+
     def press(self):
+        if self.pressed == True:
+            self.pressed = False
+        else:
+            self.pressed = True
+
+    def displayCards(self):
         buttons = []
         xLoc=(player.screen.get_width())/6
         for i in player.forSale:
             player.drawCard((xLoc,(player.screen.get_height())/2),i)
-            buttons.append(Buy(i,((xLoc-30,((player.screen.get_height())/2)+200))))
+            buttons.append(Buy(i,((xLoc-30,((player.screen.get_height())/2)+150))))
             xLoc += (player.screen.get_width())/6
         for button in buttons:
             button.draw()
@@ -139,12 +148,12 @@ class Player:
             print(i.name)
 
     def buyCard(self, card):
-        if self.playerCurrency[self.currentPlayer-1] >= card.shopCost:
+        if self.playerCurrency[self.currentPlayer-1] >= card.shopCost and len(player.playerHand[player.currentPlayer-1])<11:
             self.playerCurrency[self.currentPlayer-1] -= card.shopCost
             #Adds the purchased card to the purchasinc player's hand and removes it from the shop if they have enough currency to buy it
             self.playerHand[self.currentPlayer-1].append(card)    
         else:
-            print("Oops, looks like you dont have enough gold to purchase that card right now!")
+            print("Oops, looks like you cant buy that right now!")
 
     def attack(self, card1, card2):
         if card1.canAttack:
@@ -355,7 +364,7 @@ player.playerMana[0] = 10
 player.playerMana[1] = 10
 player.playerMaxMana[0] = 10
 player.playerMaxMana[1] = 10
-player.playerCurrency[0] += 10
+player.playerCurrency[0] += 100000000
 player.playerCurrency[1] += 10
 done = False
 shopButton = ShowShop()
@@ -363,14 +372,19 @@ while not done:
     #player.screen.blit(cards[0].picture,(10,110))
     mousepos = pygame.mouse.get_pos()
     player.screen.fill((0,0,0))
-    player.drawCard(mousepos,declaredCards[0])
-    for i in shopButton.buttons:
-        temprect = i.picture.get_rect()
-        print(temprect)
-        if temprect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
-            i.press()
+    shopButton.draw()
+    #player.drawCard(mousepos,declaredCards[0])
+    if shopButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
+                shopButton.press()
+                time.sleep(0.1)
+    if shopButton.pressed:
+        shopButton.displayCards()
+        for i in shopButton.buttons:
+            temprect = pygame.Rect(i.coords,(60,27))
+            if temprect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
+                i.press()
+                time.sleep(0.1)
     #player.drawCard((10,10),cards[1])
-    shopButton.press()
     player.boardDisplay()
     pygame.display.update()
     for event in pygame.event.get():
