@@ -190,7 +190,7 @@ class Player:
 
     def destroy(self,card, player):
         card.destroyed()
-        (self.playerBoard[player]).remove(card)
+        #(self.playerBoard[player]).remove(card)
 
     def drawCard(self, location, card):
         mousepos = pygame.mouse.get_pos()
@@ -233,14 +233,10 @@ class Player:
     def play(self, cardPos):
         card_played = self.playerHand[self.currentPlayer-1][cardPos]
         #Checks if the card you're trying to play costs too much
-        if card_played.mana <= player.playerMana[player.currentPlayer-1] and len(player.playerBoard[player.currentPlayer-1])<9:
+        if card_played.mana <= player.playerMana[player.currentPlayer-1] and len(player.playerBoard[player.currentPlayer-1])<8:
             self.playerBoard[self.currentPlayer-1].append((self.playerHand[self.currentPlayer-1]).pop(cardPos))
             card_played.played()
             player.playerMana[player.currentPlayer-1] -= card_played.mana
-            print("You played a card, costing you " + str(card_played.mana) + " mana")
-        else:
-            print("You failed to play a card, it costs " + str(card_played.mana) + " mana, whereas you have only " + str(player.playerMana[player.currentPlayer-1]) + " mana.")
-        print("You have " + str(player.playerMana[player.currentPlayer-1]) + " mana remaining.")
 
     def drawScreen(self):
         self.screen.fill((255,255,0))
@@ -335,7 +331,7 @@ class Sylvannas(CardBase):
     def destroyed(self):
         playerSwap = (player.currentPlayer % 2)+1
         if player.playerBoard[playerSwap]:
-            player.playerBoard[self.currentPlayer-1].append((player.playerBoard[playerSwap-1]).pop(random.randint(0,len(player.playerBoard[playerSwap-1])-1)))
+            player.playerBoard[player.currentPlayer-1].append((player.playerBoard[playerSwap-1]).pop(random.randint(0,len(player.playerBoard[playerSwap-1])-1)))
 
 class Thaurissan(CardBase):
     def __init__(self):
@@ -367,7 +363,8 @@ class Ogre(CardBase):
         CardBase.__init__(self, 1, "Ogre", 5, 2, 4,"C:\\Users\\Gabriel\\Desktop\\Oger.jpg","When this card is played this summons a copy of itself.")
 
     def played(self):
-        player.playerBoard[player.currentPlayer-1].append(Ogre())
+        if not len(player.playerBoard[player.currentPlayer-1]) == 8:
+            player.playerBoard[player.currentPlayer-1].append(Ogre())
 
 #This list stores the references to the classes in order that new objects can be created instead of duplicating old ones, meaning that specific instances of objects can be changed
 cards = [
