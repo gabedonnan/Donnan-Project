@@ -3,21 +3,7 @@ from enum import Enum
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-
-#Pygame Setup vvVVvv
 pygame.init()
-#Gets screen size to automatically set the screen size to match the native reolution
-##from collections import namedtuple
-##from itertools import count
-##import torch
-##import torch.nn as nn
-##import torch.optim as optim
-##import torch.nn.functional as F
-##import torchvision.transforms as T
-
-#Code to set up the pytorch environment
-##device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-##Transition = namedtuple('Transition',('state', 'action', 'next_state', 'reward'))
 #________________________________#
 ### MACHINE LEARNING CODE HERE ###
 #________________________________#
@@ -28,8 +14,13 @@ pygame.init()
 #_______________________________#
 
 class Button:
-    def __init__(self, coords, size, picture):
+    def __init__(self, coords, size, picture, hoverPicture = ""):
+        if hoverPicture == "":
+            hoverPicture = picture
+        self.clickRect = pygame.Rect(coords,size)
         self.coords = coords
+        self.hoverPicture = pygame.image.load(hoverPicture)
+        self.hoverPicture = pygame.transform.scale(self.hoverPicture, size)
         self.picture = pygame.image.load(picture)
         self.picture = pygame.transform.scale(self.picture, size)
 
@@ -37,12 +28,24 @@ class Button:
         pass
 
     def draw(self):
-        player.screen.blit(self.picture,self.coords)
+        mousepos = pygame.mouse.get_pos()
+        if self.clickRect.collidepoint(mousepos):
+            player.screen.blit(self.hoverPicture,self.coords)
+        else:
+            player.screen.blit(self.picture,self.coords)
 
+class CloseGame(Button):
+    def __init__(self):
+        Button.__init__(self, (player.screen.get_width()-60,15), (45,45), "C:\\Users\\Gabriel\\Desktop\\Close.png","C:\\Users\\Gabriel\\Desktop\\CloseHover.png")
+        #self.clickRect = pygame.Rect((player.screen.get_width()-60,15),(45,45))
+
+    def press(self):
+        pygame.quit()
+        quit()
 
 class EndTurn(Button):
     def __init__(self):
-        Button.__init__(self, (10,10),(10,15),"C:\\Users\\Gabriel\\Desktop\\EndTurn.png")
+        Button.__init__(self, (player.screen.get_width()-115,(player.screen.get_height()/2)-19),(100,38),"C:\\Users\\Gabriel\\Desktop\\EndTurn.png","C:\\Users\\Gabriel\\Desktop\\EndTurnHover.png")
 
     def press(self):
         player.endTurn()
@@ -56,15 +59,15 @@ class Combine(Button):
 
 class ShowShop(Button):
     def __init__(self):
-        Button.__init__(self,(15,15),(100,38),"C:\\Users\\Gabriel\\Desktop\\Shop.png")
+        Button.__init__(self,(15,15),(100,38),"C:\\Users\\Gabriel\\Desktop\\Shop.png","C:\\Users\\Gabriel\\Desktop\\ShopHover.png")
         self.buttons = []
-        self.clickRect = pygame.Rect((15,15),(100,38))
+        #self.clickRect = pygame.Rect((15,15),(100,38))
         self.pressed = False
 
     def press(self):
         if self.pressed == True:
             self.pressed = False
-        else:
+        elif not len(player.forSale) == 0:
             self.pressed = True
 
     def displayCards(self):
@@ -80,22 +83,30 @@ class ShowShop(Button):
     
 class Buy(Button):
     def __init__(self, card, coords):
-        Button.__init__(self,coords,(60,27),"C:\\Users\\Gabriel\\Desktop\\Buy.png")
+        Button.__init__(self,coords,(60,27),"C:\\Users\\Gabriel\\Desktop\\Buy.png","C:\\Users\\Gabriel\\Desktop\\BuyHover.png")
         self.card = card
+        #self.clickRect = pygame.Rect(coords,(60,27))
 
     def press(self):
         player.buyCard(self.card)
 
 class Player:
     displayInfo = pygame.display.Info()
-    screen = pygame.display.set_mode((displayInfo.current_w-300, displayInfo.current_h-300))
+    #For some reason you need to resize the image to 0.83 of the detected monitor resolution as it is too big otherwise
+    screen = pygame.display.set_mode((int(displayInfo.current_w*0.83), int(displayInfo.current_h*0.83)), pygame.FULLSCREEN)
     playerMaxMana = [None,None]
     playerHealth = [None,None]
     playerHand = [None,None]
     playerBoard = [None,None]
     playerMana = [None,None]
     playerCurrency = [None,None]
+    coinIcon = [None]*5
     def __init__(self, cardList):
+        self.coinIcon[0] = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Coin.png"),(45,45))
+        self.coinIcon[1] = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Coin2.png"),(45,45))
+        self.coinIcon[2] = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Coin3.png"),(45,45))
+        self.coinIcon[3] = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Coin4.png"),(45,45))
+        self.coinIcon[4] = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Coin5.png"),(45,45))
         self.playerHealth[0] = 25
         self.playerHealth[1] = 25
         self.playerHand[0] = []
@@ -111,8 +122,8 @@ class Player:
         self.forSale = []
         self.playerCurrency[0] = 0
         self.playerCurrency[1] = 0
-        self.cardImage = pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Card.png")
-        self.cardImage = pygame.transform.scale(self.cardImage, (148, 192))
+        self.cardImageHover = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\CardHover.png"), (148, 192))
+        self.cardImage = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Card.png"), (148, 192))
 
     def combineCards(self, card):
         combinationCounter = 0
@@ -148,10 +159,13 @@ class Player:
             print(i.name)
 
     def buyCard(self, card):
-        if self.playerCurrency[self.currentPlayer-1] >= card.shopCost and len(player.playerHand[player.currentPlayer-1])<11:
+        if self.playerCurrency[self.currentPlayer-1] >= card.shopCost and len(player.playerHand[player.currentPlayer-1])<9:
             self.playerCurrency[self.currentPlayer-1] -= card.shopCost
+            self.forSale.remove(card)
             #Adds the purchased card to the purchasinc player's hand and removes it from the shop if they have enough currency to buy it
-            self.playerHand[self.currentPlayer-1].append(card)    
+            self.playerHand[self.currentPlayer-1].append(card)
+            if len(self.forSale) == 0:
+                shopButton.pressed = False
         else:
             print("Oops, looks like you cant buy that right now!")
 
@@ -179,9 +193,17 @@ class Player:
         (self.playerBoard[player]).remove(card)
 
     def drawCard(self, location, card):
+        mousepos = pygame.mouse.get_pos()
         #centres the image of the card instead of using the top left
         location = (location[0]-74,location[1]-96)
-        self.screen.blit(self.cardImage,location)
+        if (mousepos[0]>location[0] and mousepos[0]<location[0]+148)and(mousepos[1]>location[1] and mousepos[1]<location[1]+192):
+            if pygame.mouse.get_pressed()[0] and card in player.playerHand[player.currentPlayer-1]:
+                #Plays card if you're hovering over it, click and have enough mana to play it (wierd to have it in this function but it works ok, dont judge me) 
+                player.play(player.playerHand[player.currentPlayer-1].index(card))
+                time.sleep(0.2)
+            self.screen.blit(self.cardImageHover,location) 
+        else:
+            self.screen.blit(self.cardImage,location)
         self.screen.blit(card.picture,(location[0]+17,location[1]+13))
         self.screen.blit(card.nameText,(location[0]+17,location[1]+86))
         self.screen.blit(card.hpText,(location[0]+112,location[1]+79))
@@ -211,7 +233,7 @@ class Player:
     def play(self, cardPos):
         card_played = self.playerHand[self.currentPlayer-1][cardPos]
         #Checks if the card you're trying to play costs too much
-        if card_played.mana <= player.playerMana[player.currentPlayer-1]:
+        if card_played.mana <= player.playerMana[player.currentPlayer-1] and len(player.playerBoard[player.currentPlayer-1])<9:
             self.playerBoard[self.currentPlayer-1].append((self.playerHand[self.currentPlayer-1]).pop(cardPos))
             card_played.played()
             player.playerMana[player.currentPlayer-1] -= card_played.mana
@@ -224,12 +246,30 @@ class Player:
         self.screen.fill((255,255,0))
         pygame.display.update()
 
-    def boardDisplay(self):
+    def boardDisplay(self,mousepos):
         size = self.screen.get_size()
+        #For drawing contents of hand
         location = 115
+        if mousepos[1] > 550 and not shopButton.pressed:
+            locFactor = 180
+            heightMod = 115
+        else:
+            locFactor = 56
+            heightMod = 25
         for card in self.playerHand[self.currentPlayer-1]:
-            self.drawCard((location,size[1]-115),card)
-            location += 56
+            self.drawCard((location,size[1]-heightMod),card)
+            location += locFactor
+        #For drawing contents of board
+        if not shopButton.pressed:
+            location = 180
+            for card in self.playerBoard[self.currentPlayer-1]:
+                self.drawCard((location,size[1]-330),card)
+                location += 180
+            location = 180
+            playerSwap = (player.currentPlayer % 2)+1
+            for card in self.playerBoard[playerSwap-1]:
+                self.drawCard((location,size[1]-575),card)
+                location += 180
 
 class CardBase:
     def __init__(self,shopCost,name, mana, attack, health, picture, text):
@@ -360,23 +400,35 @@ player.playerCurrency[1] += 2
 player.playerHand[0].append(cards[0]())
 player.playerHand[0].append(cards[1]())
 player.genCards(5)
-player.playerMana[0] = 10
-player.playerMana[1] = 10
-player.playerMaxMana[0] = 10
-player.playerMaxMana[1] = 10
+player.playerMana[0] = 100
+player.playerMana[1] = 100
+player.playerMaxMana[0] = 100
+player.playerMaxMana[1] = 100
 player.playerCurrency[0] += 100000000
 player.playerCurrency[1] += 10
 done = False
 shopButton = ShowShop()
+closeButton = CloseGame()
+endButton = EndTurn()
+boardPicture = pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Board.png")
+boardPicture = pygame.transform.scale(boardPicture, (player.screen.get_width(), player.screen.get_height()))
 while not done:
     #player.screen.blit(cards[0].picture,(10,110))
     mousepos = pygame.mouse.get_pos()
-    player.screen.fill((0,0,0))
+    player.screen.blit(boardPicture,(0,0))
     shopButton.draw()
+    endButton.draw()
+    closeButton.draw()
     #player.drawCard(mousepos,declaredCards[0])
+    if endButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
+        endButton.press()
+        time.sleep(0.1)
     if shopButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
-                shopButton.press()
-                time.sleep(0.1)
+        shopButton.press()
+        time.sleep(0.1)
+    if closeButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
+        closeButton.press()
+        time.sleep(0.1)
     if shopButton.pressed:
         shopButton.displayCards()
         for i in shopButton.buttons:
@@ -385,7 +437,7 @@ while not done:
                 i.press()
                 time.sleep(0.1)
     #player.drawCard((10,10),cards[1])
-    player.boardDisplay()
+    player.boardDisplay(mousepos)
     pygame.display.update()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
