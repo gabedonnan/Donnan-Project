@@ -36,7 +36,7 @@ class Button:
 
 class CloseGame(Button):
     def __init__(self):
-        Button.__init__(self, (player.screen.get_width()-60,15), (45,45), "C:\\Users\\Gabriel\\Desktop\\Close.png","C:\\Users\\Gabriel\\Desktop\\CloseHover.png")
+        Button.__init__(self, (player.screen.get_width()-60,15), (45,45), "Images\\Close.png","Images\\CloseHover.png")
         #self.clickRect = pygame.Rect((player.screen.get_width()-60,15),(45,45))
 
     def press(self):
@@ -45,21 +45,21 @@ class CloseGame(Button):
 
 class EndTurn(Button):
     def __init__(self):
-        Button.__init__(self, (player.screen.get_width()-115,(player.screen.get_height()/2)-19),(100,38),"C:\\Users\\Gabriel\\Desktop\\EndTurn.png","C:\\Users\\Gabriel\\Desktop\\EndTurnHover.png")
+        Button.__init__(self, (player.screen.get_width()-115,(player.screen.get_height()/2)-19),(100,38),"Images\\EndTurn.png","Images\\EndTurnHover.png")
 
     def press(self):
         player.endTurn()
 
 class Combine(Button):
     def __init__(self):
-        Button.__init__(self,(20,20),(10,15),"C:\\Users\\Gabriel\\Desktop\\Combine.png")
+        Button.__init__(self,(20,20),(10,15),"Images\\Combine.png")
 
     def press(self):
         pass #Add something to choose a card and call player.combineCard() with that card
 
 class ShowShop(Button):
     def __init__(self):
-        Button.__init__(self,(15,15),(100,38),"C:\\Users\\Gabriel\\Desktop\\Shop.png","C:\\Users\\Gabriel\\Desktop\\ShopHover.png")
+        Button.__init__(self,(15,15),(100,38),"Images\\Shop.png","Images\\ShopHover.png")
         self.buttons = []
         #self.clickRect = pygame.Rect((15,15),(100,38))
         self.pressed = False
@@ -83,7 +83,7 @@ class ShowShop(Button):
     
 class Buy(Button):
     def __init__(self, card, coords):
-        Button.__init__(self,coords,(60,27),"C:\\Users\\Gabriel\\Desktop\\Buy.png","C:\\Users\\Gabriel\\Desktop\\BuyHover.png")
+        Button.__init__(self,coords,(60,27),"Images\\Buy.png","Images\\BuyHover.png")
         self.card = card
         #self.clickRect = pygame.Rect(coords,(60,27))
 
@@ -102,11 +102,11 @@ class Player:
     playerCurrency = [None,None]
     coinIcon = [None]*5
     def __init__(self, cardList):
-        self.coinIcon[0] = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Coin.png"),(45,45))
-        self.coinIcon[1] = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Coin2.png"),(45,45))
-        self.coinIcon[2] = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Coin3.png"),(45,45))
-        self.coinIcon[3] = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Coin4.png"),(45,45))
-        self.coinIcon[4] = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Coin5.png"),(45,45))
+        self.coinIcon[0] = pygame.transform.scale(pygame.image.load("Images\\Coin.png"),(45,45))
+        self.coinIcon[1] = pygame.transform.scale(pygame.image.load("Images\\Coin2.png"),(45,45))
+        self.coinIcon[2] = pygame.transform.scale(pygame.image.load("Images\\Coin3.png"),(45,45))
+        self.coinIcon[3] = pygame.transform.scale(pygame.image.load("Images\\Coin4.png"),(45,45))
+        self.coinIcon[4] = pygame.transform.scale(pygame.image.load("Images\\Coin5.png"),(45,45))
         self.playerHealth[0] = 25
         self.playerHealth[1] = 25
         self.playerHand[0] = []
@@ -122,8 +122,8 @@ class Player:
         self.forSale = []
         self.playerCurrency[0] = 0
         self.playerCurrency[1] = 0
-        self.cardImageHover = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\CardHover.png"), (148, 192))
-        self.cardImage = pygame.transform.scale(pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Card.png"), (148, 192))
+        self.cardImageHover = pygame.transform.scale(pygame.image.load("Images\\CardHover.png"), (148, 192))
+        self.cardImage = pygame.transform.scale(pygame.image.load("Images\\Card.png"), (148, 192))
 
     def combineCards(self, card):
         combinationCounter = 0
@@ -155,8 +155,6 @@ class Player:
         for i in range(amount):
             displaylist.append(random.choice(cards))
         self.forSale = displaylist
-        for i in self.forSale:
-            print(i.name)
 
     def buyCard(self, card):
         if self.playerCurrency[self.currentPlayer-1] >= card.shopCost and len(player.playerHand[player.currentPlayer-1])<9:
@@ -190,7 +188,7 @@ class Player:
 
     def destroy(self,card, player):
         card.destroyed()
-        #(self.playerBoard[player]).remove(card)
+        (self.playerBoard[player]).remove(card)
 
     def drawCard(self, location, card):
         mousepos = pygame.mouse.get_pos()
@@ -315,27 +313,31 @@ class CardBase:
 
 class Ragnaros(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 5, "Ragnaros", 8, 2, 8,"C:\\Users\\Gabriel\\Desktop\\Ragnaros.png","When played deals 8 damage to all enemy cards on the battlefield.")
+        CardBase.__init__(self, 5, "Ragnaros", 8, 2, 8,"TempImages\\Ragnaros.png","When played deals 8 damage to all enemy cards on the battlefield.")
         
     def played(self):
+        #Very bugged, needs fixing, maybe make destroy function take lists
         playerSwap = (player.currentPlayer % 2)+1
+        destroyed = []
         for i in player.playerBoard[playerSwap-1]:
             i.health -= 8
             if i.health <= 0:
-                player.destroy(i,playerSwap-1)
+                destroyed.append(i)
+        for card in destroyed:
+            player.destroy(card,playerSwap-1)
 
 class Sylvannas(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 4, "Sylvannas", 6, 5, 5,"C:\\Users\\Gabriel\\Desktop\\Sylvanas.png","When destroyed this steals a random card from your opponents side of the battlefield.")
+        CardBase.__init__(self, 4, "Sylvannas", 6, 5, 5,"TempImages\\Sylvanas.png","When destroyed this steals a random card from your opponents side of the battlefield.")
 
     def destroyed(self):
         playerSwap = (player.currentPlayer % 2)+1
-        if player.playerBoard[playerSwap]:
+        if player.playerBoard[playerSwap-1]:#hahoo haheyy theres a bug here nerd
             player.playerBoard[player.currentPlayer-1].append((player.playerBoard[playerSwap-1]).pop(random.randint(0,len(player.playerBoard[playerSwap-1])-1)))
 
 class Thaurissan(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 3, "Thaurissan", 6, 5, 5,"C:\\Users\\Gabriel\\Desktop\\Thaurissan.jpg","At the end of your turn this reduces the cost of all cards in your hand by 1.")
+        CardBase.__init__(self, 3, "Thaurissan", 6, 5, 5,"TempImages\\Thaurissan.jpg","At the end of your turn this reduces the cost of all cards in your hand by 1.")
 
     def end(self):
         for i in player.playerHand[player.currentPlayer-1]:
@@ -343,14 +345,14 @@ class Thaurissan(CardBase):
 
 class Crusader(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 2, "Crusader", 4, 6, 6,"C:\\Users\\Gabriel\\Desktop\\Crusader.jpg","When this card is played this deals 5 damage to your player.")
+        CardBase.__init__(self, 2, "Crusader", 4, 6, 6,"TempImages\\Crusader.jpg","When this card is played this deals 5 damage to your player.")
 
     def played(self):
         player.playerHealth[player.currentPlayer-1] -= 5
 
 class Whelp(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Whelp", 2, 1, 2,"C:\\Users\\Gabriel\\Desktop\\deathwing.jpg","When destroyed this deals 2 damage to all other cards on the battlefield.")
+        CardBase.__init__(self, 1, "Whelp", 2, 1, 2,"TempImages\\deathwing.jpg","When destroyed this deals 2 damage to all other cards on the battlefield.")
 
     def destroyed(self):
         for i in player.playerBoard[0]:
@@ -360,7 +362,7 @@ class Whelp(CardBase):
 
 class Ogre(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Ogre", 5, 2, 4,"C:\\Users\\Gabriel\\Desktop\\Oger.jpg","When this card is played this summons a copy of itself.")
+        CardBase.__init__(self, 1, "Ogre", 5, 2, 4,"TempImages\\Oger.jpg","When this card is played this summons a copy of itself.")
 
     def played(self):
         if not len(player.playerBoard[player.currentPlayer-1]) == 8:
@@ -407,7 +409,7 @@ done = False
 shopButton = ShowShop()
 closeButton = CloseGame()
 endButton = EndTurn()
-boardPicture = pygame.image.load("C:\\Users\\Gabriel\\Desktop\\Board.png")
+boardPicture = pygame.image.load("Images\\Board.png")
 boardPicture = pygame.transform.scale(boardPicture, (player.screen.get_width(), player.screen.get_height()))
 while not done:
     #player.screen.blit(cards[0].picture,(10,110))
