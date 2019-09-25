@@ -104,13 +104,6 @@ class Player:
     displayInfo = pygame.display.Info()
     #For some reason you need to resize the image to 0.83 of the detected monitor resolution as it is too big otherwise
     screen = pygame.display.set_mode((int(displayInfo.current_w*0.83), int(displayInfo.current_h*0.83)), pygame.FULLSCREEN)
-    #Initialise all class list variables to empty variables so they can be more easily initialised
-    playerMaxMana = [None,None]
-    playerHealth = [None,None]
-    playerHand = [None,None]
-    playerBoard = [None,None]
-    playerMana = [None,None]
-    playerCurrency = [None,None]
     coinIcon = [None]*5
     def __init__(self, cardList):
         #Loads and scales all of the coin images
@@ -121,21 +114,15 @@ class Player:
         self.coinIcon[4] = pygame.transform.scale(pygame.image.load("Images\\Coin5.png"),(45,45))
         self.cross = pygame.transform.scale(pygame.image.load("Images\\Cross.png"),(65,65))
         #Initialises all class variables, can be improved in line efficiency
-        self.playerHealth[0] = 25
-        self.playerHealth[1] = 25
-        self.playerHand[0] = []
-        self.playerBoard[0] = []
-        self.playerBoard[1] = []
-        self.playerHand[1] = []
-        self.playerMaxMana[0] = 1
-        self.playerMaxMana[1] = 1
-        self.playerMana[0] = 1
-        self.playerMana[1] = 1
+        self.playerHealth = [25,25]
+        self.playerHand = [[],[]]
+        self.playerBoard = [[],[]]
+        self.playerMaxMana = [1,1]
+        self.playerMana = [1,1]
         self.globalCardList = cardList
         self.currentPlayer = 1
         self.forSale = []
-        self.playerCurrency[0] = 0
-        self.playerCurrency[1] = 0
+        self.playerCurrency = [0,0]
         #Initialises and scales the card background images
         self.cardImageHover = pygame.transform.scale(pygame.image.load("Images\\CardHover.png"), (148, 192))
         self.cardImage = pygame.transform.scale(pygame.image.load("Images\\Card.png"), (148, 192))
