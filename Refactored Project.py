@@ -83,6 +83,7 @@ class ShowShop(Button):
         xLoc=(player.screen.get_width())/6
         for i in player.forSale:
             player.drawCard((xLoc,(player.screen.get_height())/2),i)
+            player.drawCoin(i.shopCost,(xLoc-65,((player.screen.get_height())/2)-87))
             #Initialises a "Buy" button to each card allowing the button to call the player.buyCard function
             buttons.append(Buy(i,((xLoc-30,((player.screen.get_height())/2)+150))))
             xLoc += (player.screen.get_width())/6
@@ -104,7 +105,7 @@ class Player:
     displayInfo = pygame.display.Info()
     #For some reason you need to resize the image to 0.83 of the detected monitor resolution as it is too big otherwise
     screen = pygame.display.set_mode((int(displayInfo.current_w*0.83), int(displayInfo.current_h*0.83)), pygame.FULLSCREEN)
-    coinIcon = [None]*5
+    coinIcon = [None]*15
     def __init__(self, cardList):
         #Loads and scales all of the coin images
         self.coinIcon[0] = pygame.transform.scale(pygame.image.load("Images\\Coin.png"),(45,45))
@@ -112,6 +113,16 @@ class Player:
         self.coinIcon[2] = pygame.transform.scale(pygame.image.load("Images\\Coin3.png"),(45,45))
         self.coinIcon[3] = pygame.transform.scale(pygame.image.load("Images\\Coin4.png"),(45,45))
         self.coinIcon[4] = pygame.transform.scale(pygame.image.load("Images\\Coin5.png"),(45,45))
+        self.coinIcon[5] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin0.png"),(45,45))
+        self.coinIcon[6] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin.png"),(45,45))
+        self.coinIcon[7] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin2.png"),(45,45))
+        self.coinIcon[8] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin3.png"),(45,45))
+        self.coinIcon[9] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin4.png"),(45,45))
+        self.coinIcon[10] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin5.png"),(45,45))
+        self.coinIcon[11] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin6.png"),(45,45))
+        self.coinIcon[12] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin7.png"),(45,45))
+        self.coinIcon[13] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin8.png"),(45,45))
+        self.coinIcon[14] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin9.png"),(45,45))
         self.cross = pygame.transform.scale(pygame.image.load("Images\\Cross.png"),(65,65))
         #Initialises all class variables, can be improved in line efficiency
         self.playerHealth = [25,25]
@@ -152,6 +163,10 @@ class Player:
         if cards[0].mana < 10:
             cards[0].mana += (1 + int(((len(cards)-3)/3)))
         return cards[0]
+
+    def drawCoin(self, value, location):
+        location = (location[0]-22,location[1]-22)
+        self.screen.blit(self.coinIcon[value-1], location)
         
     def genCards(self, amount):
         displaylist = []
@@ -224,6 +239,7 @@ class Player:
         self.screen.blit(card.nameText,(location[0]+17,location[1]+86))
         self.screen.blit(card.hpText,(location[0]+112,location[1]+79))
         self.screen.blit(card.atkText,(location[0]+112,location[1]+100))
+        player.drawCoin(card.mana+6,(location[0]+138,location[1]+10))
         addFactor = 125
         #Places the scaled text in the correct location and renders it line by line so it does not stretch off the end of the card
         for line in card.textDisplay:
