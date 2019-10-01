@@ -274,12 +274,12 @@ class Player:
             card_played.played()
             player.playerMana[player.currentPlayer-1] -= card_played.mana
 
-    def drawScreen(self):
-        self.screen.fill((255,255,0))
-        pygame.display.update()
-
     def boardDisplay(self,mousepos):
         size = self.screen.get_size()
+        font = pygame.font.SysFont('arial', 16)
+        font.set_bold(True)
+        manaText = font.render(str(self.playerMana[player.currentPlayer-1]),True,(255,255,255))
+        self.screen.blit(manaText,(size[0]-30,size[1]-30))
         #For drawing contents of hand
         location = 115
         if mousepos[1] > 550 and not shopButton.pressed:
