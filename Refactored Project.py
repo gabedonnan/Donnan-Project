@@ -418,7 +418,7 @@ class Sylvannas(CardBase):
 
     def destroyed(self):
         playerSwap = (player.currentPlayer % 2)+1
-        player.attackHover = False
+        player.attackHover = False 
         if self in player.playerBoard[player.currentPlayer-1] and player.playerBoard[playerSwap-1]:
             player.playerBoard[player.currentPlayer-1].append((player.playerBoard[playerSwap-1]).pop(random.randint(0,len(player.playerBoard[playerSwap-1])-1)))
         elif self in player.playerBoard[playerSwap-1] and player.playerBoard[player.currentPlayer-1]:
@@ -444,7 +444,7 @@ class Crusader(CardBase):
 
 class Dreadsteed(CardBase):
     def __init__(self):
-        CardBase.__init__(self,5,"Dreadsteed",7,1,1,"TempImages\\Dreadsteed.jpg","When this card is destroyed return it to the battlefield")
+        CardBase.__init__(self,5,"Dreadsteed",7,1,1,"TempImages\\Dreadsteed.jpg","This card cannot have its health reduced below 1")
 
 class Whelp(CardBase):
     def __init__(self):
