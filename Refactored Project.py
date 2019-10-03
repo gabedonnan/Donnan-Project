@@ -56,7 +56,7 @@ class EndTurn(Button):
 
 class ShowCombine(Button):
     def __init__(self):
-        Button.__init__(self,(20,20),(10,15),"Images\\Combine.png","Images\\CombineHover.png")
+        Button.__init__(self,(16,60),(100,40),"Images\\CombineToggle.png","Images\\CombineToggleHover.png")
         self.pressed = False
 
     def press(self):
@@ -122,7 +122,7 @@ class Buy(Button):
 
 class Combine(Button):
     def __init__(self, card, coords):
-        Button.__init__(self,coords,(60,27),"Images\\Combine.png","Images\\BuyHover.png")
+        Button.__init__(self,coords,(60,27),"Images\\Combine.png","Images\\CombineHover.png")
         self.card = card
         #self.clickRect = pygame.Rect(coords,(60,27))
 
@@ -162,6 +162,7 @@ class Player:
         self.currentPlayer = 1
         self.forSale = []
         self.playerCurrency = [0,0]
+        self.attackHover = False
         #Initialises and scales the card background images
         self.cardImageHover = pygame.transform.scale(pygame.image.load("Images\\CardHover.png"), (148, 192))
         self.cardImage = pygame.transform.scale(pygame.image.load("Images\\Card.png"), (148, 192))
@@ -186,10 +187,10 @@ class Player:
 
     def upgradeCard(self, cards):
         #Scales the amount your card has been upgraded by the amount of cards used to upgrade it
-        cards[0].attack += (1 + int(((len(cards)-3)/3)))
-        cards[0].health += (1 + int(((len(cards)-3)/3)))
-        if cards[0].mana < 10:
-            cards[0].mana += (1 + int(((len(cards)-3)/3)))
+        cards[0].attack += (1 + int(((len(cards)-2)/2)))
+        cards[0].health += (1 + int(((len(cards)-2)/2)))
+        if cards[0].mana > 0:
+            cards[0].mana -= 1
         return cards[0]
 
     def drawCoin(self, value, location):
@@ -244,8 +245,11 @@ class Player:
     def destroy(self,card, player):
         #Enacts the "destroyed" function of a card and removes it from the board when it dies, this has some bugs when removing larger amounts of cards
         #And as such I may have to allow it to take lists of cards to destroy
-        card.destroyed()
-        (self.playerBoard[player]).remove(card)
+        if card.name != "Dreadsteed":
+            card.destroyed()
+            (self.playerBoard[player]).remove(card)
+        else:
+            card.health = 1
 
     def drawCard(self, location, card):
         mousepos = pygame.mouse.get_pos()
@@ -253,12 +257,24 @@ class Player:
         location = (location[0]-74,location[1]-96)
         #Checks if the mouse is colliding with the card
         if (mousepos[0]>location[0] and mousepos[0]<location[0]+148)and(mousepos[1]>location[1] and mousepos[1]<location[1]+192):
+            try:
+                if self.attackHover and pygame.mouse.get_pressed()[0] and card in self.playerBoard[(self.currentPlayer % 2)]:
+                    player.attack(self.attacker,card)
+                    self.attackHover = False
+                    
+            except:
+                pass
             #Checks if the mouse is down and the card is in the player's hand so that the .play function can be called, will add the same but for .attack later 
-            if pygame.mouse.get_pressed()[0] and card in player.playerHand[player.currentPlayer-1]:
+            if pygame.mouse.get_pressed()[0] and card in self.playerHand[player.currentPlayer-1]:
                 #Plays card if you're hovering over it, click and have enough mana to play it (wierd to have it in this function but it works ok, dont judge me) 
-                player.play(player.playerHand[player.currentPlayer-1].index(card))
+                self.play(player.playerHand[player.currentPlayer-1].index(card))
                 #Rests for 0.2 seconds so that a brief click of the mouse will not rapidfire buy lots of cards
                 time.sleep(0.2)
+                self.attackHover = False
+            elif pygame.mouse.get_pressed()[0] and card in self.playerBoard[self.currentPlayer-1] and card.canAttack:
+                self.attackHover = True
+                self.attacker = card
+                #add attack selector function
             self.screen.blit(self.cardImageHover,location) 
         else:
             self.screen.blit(self.cardImage,location)
@@ -275,6 +291,7 @@ class Player:
             addFactor += 11
             
     def endTurn(self):
+        self.attackHover = False
         #Executes the end of turn functions of the cards in play
         for card in self.playerBoard[self.currentPlayer-1]:
             card.end()
@@ -310,7 +327,7 @@ class Player:
         self.screen.blit(manaText,(size[0]-30,size[1]-30))
         #For drawing contents of hand
         location = 115
-        if mousepos[1] > 550 and not shopButton.pressed:
+        if mousepos[1] > 550 and not shopButton.pressed and not combineButton.pressed:
             #Moves the cards so they're farther apart if your mouse is further down the screen so they are easier to interact with but make minimal clutter otherwise
             locFactor = 180
             heightMod = 115
@@ -321,7 +338,7 @@ class Player:
             self.drawCard((location,size[1]-heightMod),card)
             location += locFactor
         #For drawing contents of board
-        if not shopButton.pressed:
+        if not shopButton.pressed and not combineButton.pressed:
             location = 180
             #Draws the cards in the board of the current player
             for card in self.playerBoard[self.currentPlayer-1]:
@@ -401,6 +418,7 @@ class Sylvannas(CardBase):
 
     def destroyed(self):
         playerSwap = (player.currentPlayer % 2)+1
+        player.attackHover = False
         if self in player.playerBoard[player.currentPlayer-1] and player.playerBoard[playerSwap-1]:
             player.playerBoard[player.currentPlayer-1].append((player.playerBoard[playerSwap-1]).pop(random.randint(0,len(player.playerBoard[playerSwap-1])-1)))
         elif self in player.playerBoard[playerSwap-1] and player.playerBoard[player.currentPlayer-1]:
@@ -424,6 +442,10 @@ class Crusader(CardBase):
         #Deals 5 damage to the player that plays it
         player.playerHealth[player.currentPlayer-1] -= 5
 
+class Dreadsteed(CardBase):
+    def __init__(self):
+        CardBase.__init__(self,5,"Dreadsteed",7,1,1,"TempImages\\Dreadsteed.jpg","When this card is destroyed return it to the battlefield")
+
 class Whelp(CardBase):
     def __init__(self):
         CardBase.__init__(self, 1, "Whelp", 2, 1, 2,"TempImages\\deathwing.jpg","When destroyed this deals 2 damage to all other cards on the battlefield.")
@@ -444,6 +466,39 @@ class Ogre(CardBase):
         if not len(player.playerBoard[player.currentPlayer-1]) == 8:
             player.playerBoard[player.currentPlayer-1].append(Ogre())
 
+def updateCards():
+    for i in player.playerBoard[0]:
+        i.hpText = i.font.render(str(i.health), True, (255,255,255))
+        i.atkText = i.font.render(str(i.attack), True, (255,255,255))
+        if i.health <= 0:
+            try:
+                player.destroy(i,0)
+            except:
+                player.destroy(i,1)
+    for i in player.playerHand[0]:
+        i.hpText = i.font.render(str(i.health), True, (255,255,255))
+        i.atkText = i.font.render(str(i.attack), True, (255,255,255))
+        if i.health <= 0:
+            try:
+                player.destroy(i,0)
+            except:
+                player.destroy(i,1)
+    for i in player.playerHand[1]:
+        i.hpText = i.font.render(str(i.health), True, (255,255,255))
+        i.atkText = i.font.render(str(i.attack), True, (255,255,255))
+        if i.health <= 0:
+            try:
+                player.destroy(i,1)
+            except:
+                player.destroy(i,0)
+    for i in player.playerBoard[1]:
+        i.hpText = i.font.render(str(i.health), True, (255,255,255))
+        i.atkText = i.font.render(str(i.attack), True, (255,255,255))
+        if i.health <= 0:
+            try:
+                player.destroy(i,1)
+            except:
+                player.destroy(i,0)
 #This list stores the references to the classes in order that new objects can be created instead of duplicating old ones, meaning that specific instances of objects can be changed
 cards = [
         Ragnaros,
@@ -451,7 +506,8 @@ cards = [
         Thaurissan,
         Crusader,
         Whelp,
-        Ogre
+        Ogre,
+        Dreadsteed
     ]
 
 #This list is to help speed up graphical things as it will not have to repeatedly declare the objects to render
@@ -461,7 +517,8 @@ declaredCards = [
         Thaurissan(),
         Crusader(),
         Whelp(),
-        Ogre()
+        Ogre(),
+        Dreadsteed()
     ]
 
 player = Player(cards)
@@ -498,23 +555,18 @@ while not done:
     shopButton.draw()
     endButton.draw()
     closeButton.draw()
+    combineButton.draw()
     #Checks if the health and attack values of each card have been changed, destroys them if their HP is below 1
-    for i in player.playerBoard[0]:
-        i.hpText = i.font.render(str(i.health), True, (255,255,255))
-        i.atkText = i.font.render(str(i.attack), True, (255,255,255))
-        if i.health <= 0:
-            player.destroy(i,0)
-    for i in player.playerBoard[1]:
-        i.hpText = i.font.render(str(i.health), True, (255,255,255))
-        i.atkText = i.font.render(str(i.attack), True, (255,255,255))
-        if i.health <= 0:
-            player.destroy(i,1)
+    updateCards()
     #Checks if mouse is collided with the button and is clicked, if so it activates the pressed functions of the buttons
     if endButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
         endButton.press()
         time.sleep(0.1)
     if shopButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
         shopButton.press()
+        time.sleep(0.1)
+    if combineButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
+        combineButton.press()
         time.sleep(0.1)
     if closeButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
         closeButton.press()
@@ -527,8 +579,18 @@ while not done:
             if temprect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
                 i.press()
                 time.sleep(0.1)
+    elif combineButton.pressed:
+        combineButton.displayCards()
+        for i in combineButton.buttons:
+            #Defines the collision rects for each button generated by the combineButton
+            temprect = pygame.Rect(i.coords,(60,27))
+            if temprect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
+                i.press()
+                time.sleep(0.1)
     #Displays everything on the board and in the hand of players
     player.boardDisplay(mousepos)
+    if player.attackHover:
+        player.screen.blit(player.cross,(mousepos[0]-32,mousepos[1]-32))
     #Updates the diplay
     pygame.display.update()
     #Checks if the window has been closed (this is essentially functionless for now but it manages events)
