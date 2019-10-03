@@ -54,13 +54,31 @@ class EndTurn(Button):
     def press(self):
         player.endTurn()
 
-class Combine(Button):
+class ShowCombine(Button):
     def __init__(self):
-        Button.__init__(self,(20,20),(10,15),"Images\\Combine.png")
+        Button.__init__(self,(20,20),(10,15),"Images\\Combine.png","Images\\CombineHover.png")
+        self.pressed = False
 
     def press(self):
-        pass #Add something to choose a card and call player.combineCard() with that card
+        shopButton.pressed = False
+        if self.pressed:
+            self.pressed = False
+        elif not len(player.playerHand[player.currentPlayer-1])==0:
+            self.pressed = True
 
+    def displayCards(self):
+        buttons = []
+        #Scales the distance between the cards to the size of the screen
+        xLoc=(player.screen.get_width())/(len(player.playerHand[player.currentPlayer-1])+1)
+        for i in player.playerHand[player.currentPlayer-1]:
+            player.drawCard((xLoc,(player.screen.get_height())/2),i)
+            buttons.append(Combine(i,((xLoc-30,((player.screen.get_height())/2)+150))))
+            xLoc += (player.screen.get_width())/(len(player.playerHand[player.currentPlayer-1])+1)
+        for button in buttons:
+            button.draw()
+        #pushes all the buttons into a class variable so they are still accessable after the displayCards function has been called and finished
+        self.buttons = buttons
+        
 class ShowShop(Button):
     def __init__(self):
         Button.__init__(self,(15,15),(100,38),"Images\\Shop.png","Images\\ShopHover.png")
@@ -69,6 +87,7 @@ class ShowShop(Button):
         self.pressed = False
 
     def press(self):
+        combineButton.pressed = False
         #Toggles whether the button has been pressed to allow the shop to be displayed independantly of all other aspects of the game
         if self.pressed == True:
             self.pressed = False
@@ -101,6 +120,15 @@ class Buy(Button):
     def press(self):
         player.buyCard(self.card)
 
+class Combine(Button):
+    def __init__(self, card, coords):
+        Button.__init__(self,coords,(60,27),"Images\\Combine.png","Images\\BuyHover.png")
+        self.card = card
+        #self.clickRect = pygame.Rect(coords,(60,27))
+
+    def press(self):
+        player.combineCards(self.card)
+        
 class Player:
     displayInfo = pygame.display.Info()
     #For some reason you need to resize the image to 0.83 of the detected monitor resolution as it is too big otherwise
@@ -385,7 +413,8 @@ class Thaurissan(CardBase):
     def end(self):
         for i in player.playerHand[player.currentPlayer-1]:
             #Reduces the cost of playing all cards in the player's hand by 1
-            i.mana -= 1
+            if i.mana > 0:
+                i.mana -= 1
 
 class Crusader(CardBase):
     def __init__(self):
@@ -456,6 +485,7 @@ player.playerCurrency[1] += 10
 done = False
 #Initialises objects needed
 shopButton = ShowShop()
+combineButton = ShowCombine()
 closeButton = CloseGame()
 endButton = EndTurn()
 boardPicture = pygame.image.load("Images\\Board.png")
