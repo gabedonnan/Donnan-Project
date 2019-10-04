@@ -229,6 +229,7 @@ class Player:
             card2.health -= card1.attack
             card1.health -= card2.attack
             card1.canAttack = False
+            self.attackHover = False
             if self.currentPlayer == 1:
                 if card1.health <= 0:
                     self.destroy(card1, 1)
