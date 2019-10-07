@@ -165,6 +165,7 @@ class Player:
         self.attackHover = False
         #Initialises and scales the card background images
         self.cardImageHover = pygame.transform.scale(pygame.image.load("Images\\CardHover.png"), (148, 192))
+        self.cardAttackImage = pygame.transform.scale(pygame.image.load("Images\\CardAttacking.png"),(148,192))
         self.cardImage = pygame.transform.scale(pygame.image.load("Images\\Card.png"), (148, 192))
 
     def combineCards(self, card):
@@ -199,13 +200,8 @@ class Player:
         
     def genCards(self, amount):
         displaylist = []
-        cards = []
-        #randomly generates (amount) cards from the globalCardList (list of all possible cards) and initialises them as new instances of their classes (this is to avoid changing the value of one card affecting the values of another)
-        for card in self.globalCardList:
-            cards.append(card())
         for i in range(amount):
-            #Chooses the cards randomly to display, may sort these later to avoid a minor bug I have experienced in which buying cards is in an incorrect order
-            displaylist.append(random.choice(cards))
+            displaylist.append(random.choice(self.globalCardList)())
         self.forSale = displaylist
 
     def buyCard(self, card):
@@ -242,6 +238,7 @@ class Player:
                     self.destroy(card2, 1)
         else:
             print("That minion cannot attack right now")
+            self.attackHover = False
 
     def destroy(self,card, player):
         #Enacts the "destroyed" function of a card and removes it from the board when it dies, this has some bugs when removing larger amounts of cards
@@ -272,11 +269,13 @@ class Player:
                 #Rests for 0.2 seconds so that a brief click of the mouse will not rapidfire buy lots of cards
                 time.sleep(0.2)
                 self.attackHover = False
-            elif pygame.mouse.get_pressed()[0] and card in self.playerBoard[self.currentPlayer-1] and card.canAttack:
+            if pygame.mouse.get_pressed()[0] and card in self.playerBoard[self.currentPlayer-1] and card.canAttack:
                 self.attackHover = True
                 self.attacker = card
                 #add attack selector function
             self.screen.blit(self.cardImageHover,location) 
+        elif card.canAttack:
+            self.screen.blit(self.cardAttackImage,location)
         else:
             self.screen.blit(self.cardImage,location)
         #Draws the text of all relevant attributes of the card in the correct locations on the card so that they can be changed dynamically and will not need to be "hard drawn"
@@ -306,10 +305,12 @@ class Player:
         self.playerMana[0] = self.playerMaxMana[0]
         self.playerMana[1] = self.playerMaxMana[1]
         #Sets all minions on the board to be able to attack
+        #Changes player
+        for i in self.playerBoard[player.currentPlayer-1]:
+            i.canAttack = False
+        self.currentPlayer = (self.currentPlayer % 2)+1
         for i in self.playerBoard[player.currentPlayer-1]:
             i.canAttack = True
-        #Changes player
-        self.currentPlayer = (self.currentPlayer % 2)+1
         self.genCards(5)
 
     def play(self, cardPos):
