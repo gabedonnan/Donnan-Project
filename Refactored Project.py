@@ -83,7 +83,7 @@ class ShowShop(Button):
     def __init__(self):
         Button.__init__(self,(15,15),(100,38),"Images\\Shop.png","Images\\ShopHover.png")
         self.buttons = []
-        #self.clickRect = pygame.Rect((15,15),(100,38))
+        self.soldIcon = pygame.transform.scale(pygame.image.load("Images\\ShopSold.png"),(100,38))
         self.pressed = False
 
     def press(self):
@@ -110,6 +110,16 @@ class ShowShop(Button):
             button.draw()
         #pushes all the buttons into a class variable so they are still accessable after the displayCards function has been called and finished
         self.buttons = buttons
+
+    def draw(self):
+        mousepos = pygame.mouse.get_pos()
+        if not len(player.forSale)==0:
+            if self.clickRect.collidepoint(mousepos):
+                player.screen.blit(self.hoverPicture,self.coords)
+            else:
+                player.screen.blit(self.picture,self.coords)
+        else:
+            player.screen.blit(self.soldIcon,self.coords)
     
 class Buy(Button):
     def __init__(self, card, coords):
@@ -423,8 +433,10 @@ class Sylvannas(CardBase):
         player.attackHover = False 
         if self in player.playerBoard[player.currentPlayer-1] and player.playerBoard[playerSwap-1]:
             player.playerBoard[player.currentPlayer-1].append((player.playerBoard[playerSwap-1]).pop(random.randint(0,len(player.playerBoard[playerSwap-1])-1)))
+            player.playerBoard[player.currentPlayer-1][len(player.playerBoard[player.currentPlayer-1])-1].canAttack = False
         elif self in player.playerBoard[playerSwap-1] and player.playerBoard[player.currentPlayer-1]:
             player.playerBoard[playerSwap-1].append((player.playerBoard[player.currentPlayer-1]).pop(random.randint(0,len(player.playerBoard[player.currentPlayer-1])-1)))
+            player.playerBoard[playerSwap-1][len(player.playerBoard[playerSwap-1])-1].canAttack = False
 
 class Thaurissan(CardBase):
     def __init__(self):
