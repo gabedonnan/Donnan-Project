@@ -162,6 +162,8 @@ class Player:
         self.coinIcon[13] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin8.png"),(45,45))
         self.coinIcon[14] = pygame.transform.scale(pygame.image.load("Images\\ManaCoin9.png"),(45,45))
         self.cross = pygame.transform.scale(pygame.image.load("Images\\Cross.png"),(65,65))
+        self.heroPortrait = pygame.transform.scale(pygame.image.load("Images\\HeroPortrait.png"),(300,250))
+        self.heroPortraitHover = pygame.transform.scale(pygame.image.load("Images\\HeroPortraitHover.png"),(300,250))
         #Initialises all class variables, can be improved in line efficiency
         self.playerHealth = [25,25]
         self.playerHand = [[],[]]
@@ -236,16 +238,16 @@ class Player:
             card1.health -= card2.attack
             card1.canAttack = False
             self.attackHover = False
-            if self.currentPlayer == 1:
-                if card1.health <= 0:
-                    self.destroy(card1, 1)
-                if card1.health <= 0:
-                    self.destroy(card2, 2)
-            else:
-                if card1.health <= 0:
-                    self.destroy(card1, 2)
-                if card1.health <= 0:
-                    self.destroy(card2, 1)
+##            if self.currentPlayer == 1:
+##                if card1.health <= 0:
+##                    self.destroy(card1, 1)
+##                if card1.health <= 0:
+##                    self.destroy(card2, 2)
+##            else:
+##                if card1.health <= 0:
+##                    self.destroy(card1, 2)
+##                if card1.health <= 0:
+##                    self.destroy(card2, 1)
         else:
             print("That minion cannot attack right now")
             self.attackHover = False
@@ -273,7 +275,7 @@ class Player:
             except:
                 pass
             #Checks if the mouse is down and the card is in the player's hand so that the .play function can be called, will add the same but for .attack later 
-            if pygame.mouse.get_pressed()[0] and card in self.playerHand[player.currentPlayer-1]:
+            if pygame.mouse.get_pressed()[0] and card in self.playerHand[player.currentPlayer-1] and not shopButton.pressed and not combineButton.pressed:
                 #Plays card if you're hovering over it, click and have enough mana to play it (wierd to have it in this function but it works ok, dont judge me) 
                 self.play(player.playerHand[player.currentPlayer-1].index(card))
                 #Rests for 0.2 seconds so that a brief click of the mouse will not rapidfire buy lots of cards
@@ -335,6 +337,7 @@ class Player:
         size = self.screen.get_size()
         font = pygame.font.SysFont('arial', 16)
         font.set_bold(True)
+        playerSwap = (self.currentPlayer % 2)+1
         manaText = font.render(str(self.playerMana[player.currentPlayer-1]),True,(255,255,255))
         self.screen.blit(manaText,(size[0]-30,size[1]-30))
         #For drawing contents of hand
@@ -358,10 +361,26 @@ class Player:
                 location += 180
             location = 180
             #Draws the cards in the board of the opposing player
-            playerSwap = (player.currentPlayer % 2)+1
             for card in self.playerBoard[playerSwap-1]:
                 self.drawCard((location,size[1]-575),card)
                 location += 180
+        heroRect = self.screen.blit(self.heroPortrait,(player.screen.get_width()-375,0))
+        
+        if heroRect.collidepoint(mousepos):
+            heroRect = self.screen.blit(self.heroPortraitHover,(player.screen.get_width()-375,0))
+            if self.attackHover and pygame.mouse.get_pressed()[0]:
+                self.attackHero(self.attacker)
+        else:
+            heroRect = self.screen.blit(self.heroPortrait,(player.screen.get_width()-375,0))
+        healthText = font.render(str(player.playerHealth[playerSwap-1]),True,(255,255,255))
+        self.screen.blit(healthText,(player.screen.get_width()-346,213))
+
+    def attackHero(self, card):
+        playerSwap = (self.currentPlayer % 2)+1
+        card.attacking()
+        self.playerHealth[playerSwap-1] -= card.attack
+        card.canAttack = False
+        self.attackHover = False
 
 class CardBase:
     def __init__(self,shopCost,name, mana, attack, health, picture, text):
@@ -547,12 +566,6 @@ player.playerCurrency[1] += 2
 player.playerHand[0].append(cards[0]())
 player.playerHand[0].append(cards[1]())
 player.genCards(5)
-player.playerMana[0] = 100
-player.playerMana[1] = 100
-player.playerMaxMana[0] = 100
-player.playerMaxMana[1] = 100
-player.playerCurrency[0] += 100000000
-player.playerCurrency[1] += 10
 done = False
 #Initialises objects needed
 shopButton = ShowShop()
@@ -608,10 +621,12 @@ while not done:
     #Updates the diplay
     pygame.display.update()
     #Checks if the window has been closed (this is essentially functionless for now but it manages events)
+    if player.playerHealth[0] < 1 or player.playerHealth[1] < 1:
+        done = True
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
     #player.boardDisplay()
-
+pygame.quit()
     
     
