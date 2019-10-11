@@ -144,7 +144,13 @@ class Player:
     #For some reason you need to resize the image to 0.83 of the detected monitor resolution as it is too big otherwise
     screen = pygame.display.set_mode((int(displayInfo.current_w*0.83), int(displayInfo.current_h*0.83)), pygame.FULLSCREEN)
     coinIcon = [None]*15
+    manaIcon = [None]*11
+    moneyIcon = [None]*11
     def __init__(self, cardList):
+        for i in range(0,11):
+            self.manaIcon[i] = pygame.transform.scale(pygame.image.load("Images\\Mana" + str(i) + ".png"),(90,120))
+        for i in range(0,11):
+            self.moneyIcon[i] = pygame.transform.scale(pygame.image.load("Images\\Money" + str(i) + ".png"),(90,120))
         #Loads and scales all of the coin images
         self.coinIcon[0] = pygame.transform.scale(pygame.image.load("Images\\Coin.png"),(45,45))
         self.coinIcon[1] = pygame.transform.scale(pygame.image.load("Images\\Coin2.png"),(45,45))
@@ -173,7 +179,7 @@ class Player:
         self.globalCardList = cardList
         self.currentPlayer = 1
         self.forSale = []
-        self.playerCurrency = [0,0]
+        self.playerCurrency = [1,3]
         self.attackHover = False
         #Initialises and scales the card background images
         self.cardImageHover = pygame.transform.scale(pygame.image.load("Images\\CardHover.png"), (148, 192))
@@ -238,16 +244,6 @@ class Player:
             card1.health -= card2.attack
             card1.canAttack = False
             self.attackHover = False
-##            if self.currentPlayer == 1:
-##                if card1.health <= 0:
-##                    self.destroy(card1, 1)
-##                if card1.health <= 0:
-##                    self.destroy(card2, 2)
-##            else:
-##                if card1.health <= 0:
-##                    self.destroy(card1, 2)
-##                if card1.health <= 0:
-##                    self.destroy(card2, 1)
         else:
             print("That minion cannot attack right now")
             self.attackHover = False
@@ -308,12 +304,10 @@ class Player:
         for card in self.playerBoard[self.currentPlayer-1]:
             card.end()
         #Changes the current player and gives both players currency
-        self.playerCurrency[0] += 3
-        self.playerCurrency[1] += 3
+        self.playerCurrency[player.currentPlayer] += 1 + (player.playerCurrency[player.currentPlayer-1]//10)
         #Increments the maximum mana of each player if it is less than 10
         if self.playerMaxMana[player.currentPlayer-1] < 10:
-            self.playerMaxMana[0] += 1
-            self.playerMaxMana[1] += 1
+            self.playerMaxMana[player.currentPlayer] += 1
         self.playerMana[0] = self.playerMaxMana[0]
         self.playerMana[1] = self.playerMaxMana[1]
         #Sets all minions on the board to be able to attack
@@ -338,8 +332,12 @@ class Player:
         font = pygame.font.SysFont('arial', 16)
         font.set_bold(True)
         playerSwap = (self.currentPlayer % 2)+1
-        manaText = font.render(str(self.playerMana[player.currentPlayer-1]),True,(255,255,255))
-        self.screen.blit(manaText,(size[0]-30,size[1]-30))
+        if player.playerCurrency[player.currentPlayer-1]>10:
+            coins = 10
+        else:
+            coins = player.playerCurrency[player.currentPlayer-1]
+        self.screen.blit(self.moneyIcon[coins],(size[0]-80,size[1]-130))
+        self.screen.blit(self.manaIcon[self.playerMana[self.currentPlayer-1]],(size[0]-130,size[1]-130))
         #For drawing contents of hand
         location = 115
         if mousepos[1] > 550 and not shopButton.pressed and not combineButton.pressed:
@@ -555,16 +553,10 @@ declaredCards = [
     ]
 
 player = Player(cards)
-#Gives the second player a small headstart as they are naturally at a disadvantage due to how turn based games work
-player.playerCurrency[1] += 2
-
-
 #For any variable "player" or "playerNum" within a function this refers to the player *in control* of the thing making the effect, not necessarily the player being affected
 
 ##______________ MAIN GAME LOOP _________________##
 #Initialises all variables needed
-player.playerHand[0].append(cards[0]())
-player.playerHand[0].append(cards[1]())
 player.genCards(5)
 done = False
 #Initialises objects needed
