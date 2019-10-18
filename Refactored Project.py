@@ -8,6 +8,46 @@ pygame.init()
 ### MACHINE LEARNING CODE HERE ###
 #________________________________#
 
+#Oh boy o man kill me nowski
+class AI:
+    def __init__(self):
+        self.availableActions = {
+            1:player.play,
+            2:player.combineCards,
+            3:player.buyCard,
+            4:player.attack,
+            5:player.attackHero
+            }
+        self.actionInputs = [
+            [0],
+            [1],
+            [2],
+            [3],
+            [4],
+            [5],
+            [6],
+            [7],
+            [player.playerHand[1][0]],
+            [player.playerHand[1][1]],
+            [player.playerHand[1][2]],
+            [player.playerHand[1][3]],
+            [player.playerHand[1][4]],
+            [player.playerHand[1][5]],
+            [player.playerHand[1][6]],
+            [player.playerHand[1][7]],
+            [player.forSale[0]],
+            [player.forSale[1]],
+            [player.forSale[2]],
+            [player.forSale[3]],
+            [player.forSale[4]],
+            [player.playerBoard[1][0],player.playerBoard[1]]
+            ]
+    def SearchTurn(depth):
+        for action in self.availableActions:
+            if action == player.play:
+                action()
+    
+
 
 #_______________________________#
 ### END MACHINE LEARNING CODE ###
@@ -19,7 +59,7 @@ class Button:
             hoverPicture = picture
         self.clickRect = pygame.Rect(coords,size)
         self.coords = coords
-        #Initialises the images for the button, the hoverPicture is a slightly lighter image displayed when the user hovers over it
+        #Initialises the images for the button, the hoverPicture is a slightly lighter image displayed when the user hovers over it, this is a purely aesthetic thing but helps in testing to know the program is functioning
         self.hoverPicture = pygame.image.load(hoverPicture)
         self.hoverPicture = pygame.transform.scale(self.hoverPicture, size)
         self.picture = pygame.image.load(picture)
@@ -53,6 +93,15 @@ class EndTurn(Button):
 
     def press(self):
         player.endTurn()
+
+class Reroll(Button):
+    def __init__(self):
+        Button.__init__(self,(120,10),(45,45),"Images\\RerollButton.png","Images\\RerollButtonHover.png")
+
+    def press(self):
+        if player.playerCurrency[player.currentPlayer-1]>1:
+            player.genCards(5)
+            player.playerCurrency[player.currentPlayer-1]-=2
 
 class ShowCombine(Button):
     def __init__(self):
@@ -304,10 +353,10 @@ class Player:
         for card in self.playerBoard[self.currentPlayer-1]:
             card.end()
         #Changes the current player and gives both players currency
-        self.playerCurrency[player.currentPlayer] += 1 + (player.playerCurrency[player.currentPlayer-1]//10)
+        self.playerCurrency[player.currentPlayer-1] += 4 + (player.playerCurrency[player.currentPlayer-1]//10)
         #Increments the maximum mana of each player if it is less than 10
         if self.playerMaxMana[player.currentPlayer-1] < 10:
-            self.playerMaxMana[player.currentPlayer] += 1
+            self.playerMaxMana[self.currentPlayer-1] += 1
         self.playerMana[0] = self.playerMaxMana[0]
         self.playerMana[1] = self.playerMaxMana[1]
         #Sets all minions on the board to be able to attack
@@ -332,10 +381,10 @@ class Player:
         font = pygame.font.SysFont('arial', 16)
         font.set_bold(True)
         playerSwap = (self.currentPlayer % 2)+1
-        if player.playerCurrency[player.currentPlayer-1]>10:
+        if self.playerCurrency[self.currentPlayer-1]>10:
             coins = 10
         else:
-            coins = player.playerCurrency[player.currentPlayer-1]
+            coins = self.playerCurrency[self.currentPlayer-1]
         self.screen.blit(self.moneyIcon[coins],(size[0]-80,size[1]-130))
         self.screen.blit(self.manaIcon[self.playerMana[self.currentPlayer-1]],(size[0]-130,size[1]-130))
         #For drawing contents of hand
@@ -362,16 +411,16 @@ class Player:
             for card in self.playerBoard[playerSwap-1]:
                 self.drawCard((location,size[1]-575),card)
                 location += 180
-        heroRect = self.screen.blit(self.heroPortrait,(player.screen.get_width()-375,0))
+        heroRect = self.screen.blit(self.heroPortrait,(self.screen.get_width()-375,0))
         
         if heroRect.collidepoint(mousepos):
-            heroRect = self.screen.blit(self.heroPortraitHover,(player.screen.get_width()-375,0))
+            heroRect = self.screen.blit(self.heroPortraitHover,(self.screen.get_width()-375,0))
             if self.attackHover and pygame.mouse.get_pressed()[0]:
                 self.attackHero(self.attacker)
         else:
             heroRect = self.screen.blit(self.heroPortrait,(player.screen.get_width()-375,0))
-        healthText = font.render(str(player.playerHealth[playerSwap-1]),True,(255,255,255))
-        self.screen.blit(healthText,(player.screen.get_width()-346,213))
+        healthText = font.render(str(self.playerHealth[playerSwap-1]),True,(255,255,255))
+        self.screen.blit(healthText,(self.screen.get_width()-346,213))
 
     def attackHero(self, card):
         playerSwap = (self.currentPlayer % 2)+1
@@ -428,10 +477,10 @@ class CardBase:
     def end(self):
         pass
 
-class Ragnaros(CardBase):
+class Glocktopus(CardBase):
     #All init statements for CardBase subclasses are extremely similar, merely passing in the values needed
     def __init__(self):
-        CardBase.__init__(self, 5, "Ragnaros", 8, 2, 8,"TempImages\\Ragnaros.png","When played deals 8 damage to all enemy cards on the battlefield.")
+        CardBase.__init__(self, 5, "Glocktopus", 8, 2, 8,"Images\\Glocktopus.png","When played deals 8 damage to all enemy cards on the battlefield.")
         
     def played(self):
         #Deals 8 damage to all cards on the opposing side of the board
@@ -446,7 +495,9 @@ class Sylvannas(CardBase):
         CardBase.__init__(self, 4, "Sylvannas", 6, 5, 5,"TempImages\\Sylvanas.png","When destroyed this steals a random card from your opponents side of the battlefield.")
 
     def destroyed(self):
+        #Steals a card from the opposing player's board (if they have one) and makes it unable to attack this turn
         playerSwap = (player.currentPlayer % 2)+1
+        #Switches attackHover to false so that if this card steals something without a player attacking when they were previously planning to (as can happen in specific situations) they will not continue to try and attack with a card they no longer have
         player.attackHover = False 
         if self in player.playerBoard[player.currentPlayer-1] and player.playerBoard[playerSwap-1]:
             player.playerBoard[player.currentPlayer-1].append((player.playerBoard[playerSwap-1]).pop(random.randint(0,len(player.playerBoard[playerSwap-1])-1)))
@@ -461,7 +512,7 @@ class Thaurissan(CardBase):
 
     def end(self):
         for i in player.playerHand[player.currentPlayer-1]:
-            #Reduces the cost of playing all cards in the player's hand by 1
+            #Reduces the cost of playing all cards in the controlling player's hand by 1
             if i.mana > 0:
                 i.mana -= 1
 
@@ -473,9 +524,31 @@ class Crusader(CardBase):
         #Deals 5 damage to the player that plays it
         player.playerHealth[player.currentPlayer-1] -= 5
 
+class Armoursmith(CardBase):
+    def __init__(self):
+        CardBase.__init__(self, 2, "Armoursmith", 3, 1, 3,"TempImages\\Blacksmith.jpg","At the end of your turn this gives a friendly card in play 2 additional health")
+
+    def end(self):
+        choice = random.choice(player.playerBoard[player.currentPlayer-1])
+        choice.health += 2
+
+class Meteor(CardBase):
+    def __init__(self):
+        CardBase.__init__(self, 3, "Meteor", 9, 9, 3, "Images\\Meteor.png", "This card can attack immediately when played instead of waiting a turn.")
+
+    def played(self):
+        self.canAttack = True
+
+class Implings(CardBase):
+    def __init__(self):
+        CardBase.__init__(self, 1, "Implings", 1, 2, 1, "Images\\Imps.png", "When this card is destroyed reroll the shop for the current player.")
+
+    def destroyed(self):
+        player.genCards(5)
+
 class Dreadsteed(CardBase):
     def __init__(self):
-        CardBase.__init__(self,5,"Dreadsteed",7,1,1,"TempImages\\Dreadsteed.jpg","This card cannot have its health reduced below 1")
+        CardBase.__init__(self,5,"Dreadsteed",7,1,1,"TempImages\\Dreadsteed.jpg","This card cannot have its health reduced below 1.")
 
 class Whelp(CardBase):
     def __init__(self):
@@ -532,24 +605,30 @@ def updateCards():
                 player.destroy(i,0)
 #This list stores the references to the classes in order that new objects can be created instead of duplicating old ones, meaning that specific instances of objects can be changed
 cards = [
-        Ragnaros,
+        Glocktopus,
         Sylvannas,
         Thaurissan,
         Crusader,
         Whelp,
         Ogre,
-        Dreadsteed
+        Dreadsteed,
+        Implings,
+        Armoursmith,
+        Meteor
     ]
 
 #This list is to help speed up graphical things as it will not have to repeatedly declare the objects to render
 declaredCards = [
-        Ragnaros(),
+        Glocktopus(),
         Sylvannas(),
         Thaurissan(),
         Crusader(),
         Whelp(),
         Ogre(),
-        Dreadsteed()
+        Dreadsteed(),
+        Implings(),
+        Armoursmith(),
+        Meteor()
     ]
 
 player = Player(cards)
@@ -561,35 +640,44 @@ player.genCards(5)
 done = False
 #Initialises objects needed
 shopButton = ShowShop()
+rerollButton = Reroll()
 combineButton = ShowCombine()
 closeButton = CloseGame()
 endButton = EndTurn()
 boardPicture = pygame.image.load("Images\\Board.png")
 boardPicture = pygame.transform.scale(boardPicture, (player.screen.get_width(), player.screen.get_height()))
+#ai=AI()
 while not done:
     mousepos = pygame.mouse.get_pos()
     #Draws the board
     player.screen.blit(boardPicture,(0,0))
-    #Draws permanent buttons
+    #Draws buttons so that they can be interacted with (they could still technically be clicked without being drawn but they would be invisible)
     shopButton.draw()
     endButton.draw()
     closeButton.draw()
     combineButton.draw()
+    if shopButton.pressed:
+        rerollButton.draw()
+        if rerollButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
+            rerollButton.press()
+            time.sleep(0.2)
     #Checks if the health and attack values of each card have been changed, destroys them if their HP is below 1
+    if pygame.mouse.get_pressed()[2]:
+        player.attackHover = False
     updateCards()
     #Checks if mouse is collided with the button and is clicked, if so it activates the pressed functions of the buttons
     if endButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
         endButton.press()
-        time.sleep(0.1)
+        time.sleep(0.2)
     if shopButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
         shopButton.press()
-        time.sleep(0.1)
+        time.sleep(0.2)
     if combineButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
         combineButton.press()
-        time.sleep(0.1)
+        time.sleep(0.2)
     if closeButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
         closeButton.press()
-        time.sleep(0.1)
+        time.sleep(0.2)
     if shopButton.pressed:
         shopButton.displayCards()
         for i in shopButton.buttons:
