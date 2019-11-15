@@ -9,43 +9,43 @@ pygame.init()
 #________________________________#
 
 #Oh boy o man kill me nowski
-class AI:
-    def __init__(self):
-        self.availableActions = {
-            1:player.play,
-            2:player.combineCards,
-            3:player.buyCard,
-            4:player.attack,
-            5:player.attackHero
-            }
-        self.actionInputs = [
-            [0],
-            [1],
-            [2],
-            [3],
-            [4],
-            [5],
-            [6],
-            [7],
-            [player.playerHand[1][0]],
-            [player.playerHand[1][1]],
-            [player.playerHand[1][2]],
-            [player.playerHand[1][3]],
-            [player.playerHand[1][4]],
-            [player.playerHand[1][5]],
-            [player.playerHand[1][6]],
-            [player.playerHand[1][7]],
-            [player.forSale[0]],
-            [player.forSale[1]],
-            [player.forSale[2]],
-            [player.forSale[3]],
-            [player.forSale[4]],
-            [player.playerBoard[1][0],player.playerBoard[1]]
-            ]
-    def SearchTurn(depth):
-        for action in self.availableActions:
-            if action == player.play:
-                action()
+##class AI:
+##    def __init__(self):
+##        self.availableActions = {
+##            1:player.play,
+##            2:player.combineCards,
+##            3:player.buyCard,
+##            4:player.attack,
+##            5:player.attackHero
+##            }
+##        self.actionInputs = [
+##            [0],
+##            [1],
+##            [2],
+##            [3],
+##            [4],
+##            [5],
+##            [6],
+##            [7],
+##            [player.playerHand[1][0]],
+##            [player.playerHand[1][1]],
+##            [player.playerHand[1][2]],
+##            [player.playerHand[1][3]],
+##            [player.playerHand[1][4]],
+##            [player.playerHand[1][5]],
+##            [player.playerHand[1][6]],
+##            [player.playerHand[1][7]],
+##            [player.forSale[0]],
+##            [player.forSale[1]],
+##            [player.forSale[2]],
+##            [player.forSale[3]],
+##            [player.forSale[4]],
+##            [player.playerBoard[1][0],player.playerBoard[1]]
+##            ]
+##    def SearchTurn(depth):
+##        for action in self.availableActions:
+##            if action == player.play:
+##                action()
     
 
 
@@ -53,10 +53,54 @@ class AI:
 ### END MACHINE LEARNING CODE ###
 #_______________________________#
 
+class Menu:
+    def __init__(self):
+        self.playing = False
+        #Mode True is playing in local multiplayer, mode False will be playing vs an AI
+        self.mode = False
+        self.tutorial = False
+
+class TextBox:
+    def __init__(self, text, maxCharWidth, bufferSize, location):
+        self.location = location
+        self.text = text
+        self.maxCharWidth = maxCharWidth
+        self.bufferSize = bufferSize
+        self.font = pygame.font.SysFont('arial', 16)
+        self.font.set_bold(True)
+        wordLen=0
+        count = 0
+        textSplit = [[]]
+        for word in self.text.split(" "):
+            wordLen += len(word)
+            textSplit[count].append(word)
+            if wordLen > maxCharWidth:
+                count += 1
+                wordLen = 0
+                textSplit.append([])
+        count = 0
+        self.textDisplay = []
+        for line in textSplit:
+            self.textDisplay.append(self.font.render(" ".join(line), True, (255,255,255)))
+
+    def draw(self):
+        addFactor = 0
+        provisionalW = 0
+        for i in self.textDisplay:
+            if i.get_width() > provisionalW:
+                provisionalW = i.get_width()
+        pygame.draw.rect(player.screen,(0,0,0),(self.location,(provisionalW + 2*self.bufferSize,len(self.textDisplay)*16 + 2*self.bufferSize)),0)
+        pygame.draw.rect(player.screen,(255,255,255),(self.location,(provisionalW + 2*self.bufferSize,len(self.textDisplay)*16 + 2*self.bufferSize)),2)
+        for line in self.textDisplay:
+            player.screen.blit(line,(self.location[0]+self.bufferSize,self.location[1]+self.bufferSize+addFactor))
+            addFactor += 14
+
 class Button:
     def __init__(self, coords, size, picture, hoverPicture = ""):
         if hoverPicture == "":
             hoverPicture = picture
+        self.size = size
+        self.active = False
         self.clickRect = pygame.Rect(coords,size)
         self.coords = coords
         #Initialises the images for the button, the hoverPicture is a slightly lighter image displayed when the user hovers over it, this is a purely aesthetic thing but helps in testing to know the program is functioning
@@ -72,10 +116,49 @@ class Button:
     def draw(self):
         #Draws the button at the position it is set and checks if it is collided with the mouse to display either the normal or hover picture
         mousepos = pygame.mouse.get_pos()
-        if self.clickRect.collidepoint(mousepos):
+        if self.clickRect.collidepoint(mousepos) and not self.active:
             player.screen.blit(self.hoverPicture,self.coords)
-        else:
+        elif not self.active:
             player.screen.blit(self.picture,self.coords)
+        else:
+            player.screen.blit(self.altImage,self.coords)
+
+class PlayGame(Button):
+    def __init__(self):
+        Button.__init__(self, (player.screen.get_width()/2-220,100),(440,280),"Images\\PlayButton.png","Images\\PlayButtonHover.png")
+
+    def press(self):
+        menu.playing = True
+
+class ToggleTutorial(Button):
+    def __init__(self):
+        Button.__init__(self, (player.screen.get_width()/2-110,450),(220,60),"Images\\Tutorial.png","Images\\TutorialHover.png")
+        self.altImage = pygame.transform.scale(pygame.image.load("Images\\TutorialActive.png"),self.size)
+
+    def press(self):
+        self.active = not self.active
+        menu.tutorial = not menu.tutorial
+
+class VsAI(Button):
+    def __init__(self):
+        Button.__init__(self, (player.screen.get_width()/2-70,570),(140,60),"Images\\VsAI.png","Images\\VsAIHover.png")
+        self.altImage = pygame.transform.scale(pygame.image.load("Images\\VsAIActive.png"),self.size)
+        self.active = True
+
+    def press(self):
+        self.active = True
+        playerButton.active = False
+        menu.mode = False
+
+class VsPlayer(Button):
+    def __init__(self):
+        Button.__init__(self, (player.screen.get_width()/2-140,690),(280,60),"Images\\VsPlayer.png","Images\\VsPlayerHover.png")
+        self.altImage = pygame.transform.scale(pygame.image.load("Images\\VsPlayerActive.png"),self.size)
+
+    def press(self):
+        self.active = True
+        AIButton.active = False
+        menu.mode = True
 
 class CloseGame(Button):
     def __init__(self):
@@ -99,9 +182,9 @@ class Reroll(Button):
         Button.__init__(self,(120,10),(45,45),"Images\\RerollButton.png","Images\\RerollButtonHover.png")
 
     def press(self):
-        if player.playerCurrency[player.currentPlayer-1]>1:
+        if player.playerCurrency[player.currentPlayer-1]>0:
             player.genCards(5)
-            player.playerCurrency[player.currentPlayer-1]-=2
+            player.playerCurrency[player.currentPlayer-1]-=1
 
 class ShowCombine(Button):
     def __init__(self):
@@ -228,7 +311,7 @@ class Player:
         self.globalCardList = cardList
         self.currentPlayer = 1
         self.forSale = []
-        self.playerCurrency = [1,3]
+        self.playerCurrency = [1,2]
         self.attackHover = False
         #Initialises and scales the card background images
         self.cardImageHover = pygame.transform.scale(pygame.image.load("Images\\CardHover.png"), (148, 192))
@@ -241,13 +324,11 @@ class Player:
         removed = []
         for i in player.playerHand[player.currentPlayer-1]:
             #Checks if the cards are all identical (i.e. you cannot combine an un-upgraded card and an upgraded one)
-            if i.name == card.name and i.mana == card.mana and i.attack == card.attack and i.health == card.health:
+            if i.name == card.name and combinationCounter < 3 and not i.upgraded and not card.upgraded:
                 removed.append(i)
                 combinationCounter += 1
         #Checks if you have enough cards to combine
-        if len(removed) < 3:
-            print("Error, you do not have enough of these cards to combine")
-        else:
+        if len(removed) > 2:
             for i in removed:
                 player.playerHand[player.currentPlayer-1].remove(i)
             #Adds the upgraded card to the player's hand
@@ -255,8 +336,9 @@ class Player:
 
     def upgradeCard(self, cards):
         #Scales the amount your card has been upgraded by the amount of cards used to upgrade it
-        cards[0].attack += (1 + int(((len(cards)-2)/2)))
-        cards[0].health += (1 + int(((len(cards)-2)/2)))
+        cards[0].attack = cards[0].attack*2
+        cards[0].health = cards[0].health*2
+        cards[0].upgraded = True
         if cards[0].mana > 0:
             cards[0].mana -= 1
         return cards[0]
@@ -353,7 +435,9 @@ class Player:
         for card in self.playerBoard[self.currentPlayer-1]:
             card.end()
         #Changes the current player and gives both players currency
-        self.playerCurrency[player.currentPlayer-1] += 4 + (player.playerCurrency[player.currentPlayer-1]//10)
+        self.playerCurrency[player.currentPlayer-1] += 4
+        if self.playerCurrency[player.currentPlayer-1] > 10:
+           self.playerCurrency[player.currentPlayer-1] = 10 
         #Increments the maximum mana of each player if it is less than 10
         if self.playerMaxMana[player.currentPlayer-1] < 10:
             self.playerMaxMana[self.currentPlayer-1] += 1
@@ -451,6 +535,7 @@ class CardBase:
         textSplit = [[]]
         wordLen = 0
         count = 0
+        self.upgraded = False
         #Splits the text automatically into lines based on how long it is using the custom scaled font
         for word in self.text.split(" "):
             wordLen += len(word)
@@ -480,7 +565,7 @@ class CardBase:
 class Glocktopus(CardBase):
     #All init statements for CardBase subclasses are extremely similar, merely passing in the values needed
     def __init__(self):
-        CardBase.__init__(self, 5, "Glocktopus", 8, 2, 8,"Images\\Glocktopus.png","When played deals 8 damage to all enemy cards on the battlefield.")
+        CardBase.__init__(self, 2, "Glocktopus", 5, 2, 8,"Images\\Glocktopus.png","When played deals 8 damage to all enemy cards on the battlefield.")
         
     def played(self):
         #Deals 8 damage to all cards on the opposing side of the board
@@ -492,7 +577,7 @@ class Glocktopus(CardBase):
 
 class Sylvannas(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 4, "Sylvannas", 6, 5, 5,"TempImages\\Sylvanas.png","When destroyed this steals a random card from your opponents side of the battlefield.")
+        CardBase.__init__(self, 3, "Sylvannas", 4, 5, 5,"TempImages\\Sylvanas.png","When destroyed this steals a random card from your opponents side of the battlefield.")
 
     def destroyed(self):
         #Steals a card from the opposing player's board (if they have one) and makes it unable to attack this turn
@@ -508,7 +593,7 @@ class Sylvannas(CardBase):
 
 class Thaurissan(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 3, "Thaurissan", 6, 5, 5,"TempImages\\Thaurissan.jpg","At the end of your turn this reduces the cost of all cards in your hand by 1.")
+        CardBase.__init__(self, 3, "Thaurissan", 4, 5, 5,"TempImages\\Thaurissan.jpg","At the end of your turn this reduces the cost of all cards in your hand by 1.")
 
     def end(self):
         for i in player.playerHand[player.currentPlayer-1]:
@@ -518,7 +603,7 @@ class Thaurissan(CardBase):
 
 class Crusader(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 2, "Crusader", 4, 6, 6,"TempImages\\Crusader.jpg","When this card is played this deals 5 damage to your player.")
+        CardBase.__init__(self, 2, "Crusader", 2, 6, 6,"TempImages\\Crusader.jpg","When this card is played this deals 5 damage to your player.")
 
     def played(self):
         #Deals 5 damage to the player that plays it
@@ -526,7 +611,7 @@ class Crusader(CardBase):
 
 class Armoursmith(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 2, "Armoursmith", 3, 1, 3,"TempImages\\Blacksmith.jpg","At the end of your turn this gives a friendly card in play 2 additional health")
+        CardBase.__init__(self, 2, "Armoursmith", 1, 1, 3,"TempImages\\Blacksmith.jpg","At the end of your turn this gives a friendly card in play 2 additional health")
 
     def end(self):
         choice = random.choice(player.playerBoard[player.currentPlayer-1])
@@ -534,25 +619,25 @@ class Armoursmith(CardBase):
 
 class Meteor(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 3, "Meteor", 9, 9, 3, "Images\\Meteor.png", "This card can attack immediately when played instead of waiting a turn.")
+        CardBase.__init__(self, 1, "Meteor", 5, 8, 3, "Images\\Meteor.png", "This card can attack immediately when played instead of waiting a turn.")
 
     def played(self):
         self.canAttack = True
 
 class Implings(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Implings", 1, 2, 1, "Images\\Imps.png", "When this card is destroyed reroll the shop for the current player.")
+        CardBase.__init__(self, 1, "Implings", 0, 2, 1, "Images\\Imps.png", "When this card is destroyed reroll the shop for the current player.")
 
     def destroyed(self):
         player.genCards(5)
 
 class Dreadsteed(CardBase):
     def __init__(self):
-        CardBase.__init__(self,5,"Dreadsteed",7,1,1,"TempImages\\Dreadsteed.jpg","This card cannot have its health reduced below 1.")
+        CardBase.__init__(self,4,"Dreadsteed",4,1,1,"TempImages\\Dreadsteed.jpg","This card cannot have its health reduced below 1.")
 
 class Whelp(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Whelp", 2, 1, 2,"TempImages\\deathwing.jpg","When destroyed this deals 2 damage to all other cards on the battlefield.")
+        CardBase.__init__(self, 1, "Whelp", 1, 1, 2,"TempImages\\deathwing.jpg","When destroyed this deals 2 damage to all other cards on the battlefield.")
 
     def destroyed(self):
         #Deals 2 damage to all cards on both players boards when destroyed
@@ -563,12 +648,15 @@ class Whelp(CardBase):
 
 class Ogre(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Ogre", 5, 2, 4,"TempImages\\Oger.jpg","When this card is played this summons a copy of itself.")
+        CardBase.__init__(self, 1, "Ogre", 3, 2, 3,"TempImages\\Oger.jpg","When this card is played this summons a copy of itself.")
 
     def played(self):
         #Summons a copy of itself when played
         if not len(player.playerBoard[player.currentPlayer-1]) == 8:
             player.playerBoard[player.currentPlayer-1].append(Ogre())
+        if self.upgraded:
+            player.playerBoard[player.currentPlayer-1][len(player.playerBoard[player.currentPlayer-1])-1].health = 8
+            player.playerBoard[player.currentPlayer-1][len(player.playerBoard[player.currentPlayer-1])-1].attack = 4
 
 def updateCards():
     for i in player.playerBoard[0]:
@@ -603,7 +691,14 @@ def updateCards():
                 player.destroy(i,1)
             except:
                 player.destroy(i,0)
+
+def rotateCentre(image, angle):
+    centre = image.get_rect().center
+    rotatedImage = pygame.transform.rotate(image, angle)
+    newRect = rotatedImage.get_rect(center = center)
+    return rotatedImage, newRect
 #This list stores the references to the classes in order that new objects can be created instead of duplicating old ones, meaning that specific instances of objects can be changed
+#def MainGame():
 cards = [
         Glocktopus,
         Sylvannas,
@@ -634,6 +729,36 @@ declaredCards = [
 player = Player(cards)
 #For any variable "player" or "playerNum" within a function this refers to the player *in control* of the thing making the effect, not necessarily the player being affected
 
+##_______________MAIN MENU___________________##
+menu = Menu()
+playerButton = VsPlayer()
+AIButton = VsAI()
+tutorialButton = ToggleTutorial()
+playGameButton = PlayGame()
+while not menu.playing:
+    mousepos = pygame.mouse.get_pos()
+    tutorialButton.draw()
+    AIButton.draw()
+    playerButton.draw()
+    playGameButton.draw()
+    isPressed = pygame.mouse.get_pressed()[0]
+    if tutorialButton.clickRect.collidepoint(mousepos) and isPressed:
+        tutorialButton.press()
+        time.sleep(0.2)
+    if AIButton.clickRect.collidepoint(mousepos) and isPressed:
+        AIButton.press()
+        time.sleep(0.2)
+    if playerButton.clickRect.collidepoint(mousepos) and isPressed:
+        playerButton.press()
+        time.sleep(0.2)
+    if playGameButton.clickRect.collidepoint(mousepos) and isPressed:
+        playGameButton.press()
+        time.sleep(0.2)
+    pygame.display.update()
+    pygame.event.pump()
+
+
+
 ##______________ MAIN GAME LOOP _________________##
 #Initialises all variables needed
 player.genCards(5)
@@ -646,7 +771,20 @@ closeButton = CloseGame()
 endButton = EndTurn()
 boardPicture = pygame.image.load("Images\\Board.png")
 boardPicture = pygame.transform.scale(boardPicture, (player.screen.get_width(), player.screen.get_height()))
+tutorialBoxes = [
+    TextBox("Welcome to the game, here's a brief overview of the game's mechanics. --PRESS SPACE TO CONTINUE--", 20, 8, (120,3)),
+    TextBox("Each turn you gain a set amount of gold which you can spend at the shop to buy cards. In order to open the shop press the shop button in the top left corner of the screen. --PRESS SPACE TO CONTINUE--", 20, 8, (120,3)),
+    TextBox("If the cards in the shop are not to your liking or you have already bought everything in it you can spend 1 gold in order to refresh its contents using the reroll button which appears next to the shop button when the shop is open. --PRESS SPACE TO CONTINUE--", 20, 8, (120,3)),
+    TextBox("When you have 3 of the same card you can choose to combine them to make a more powerful card using the combine button. --PRESS SPACE TO CONTINUE--", 20, 8, (120,3)),
+    TextBox("You start the game with 1 maximum mana, this increases by 1 for each of your turn up to a maximum of 10. At the start of each turn your mana refreshes up to your maximum mana value. --PRESS SPACE TO CONTINUE--", 20, 8, (120,3)),
+    TextBox("Each card has a mana cost associated with it, playing the cards (by clicking the cards when they're in your hand) will expend that much mana if it can, if it cannot you will not be able to play the card. --PRESS SPACE TO CONTINUE--", 20, 8, (120,3)),
+    TextBox("Your cards will not normally be able to attack immediately when played, you will have to wait until your next turn. In order to attack with a card you click on a card with a green outline on the board and its desired target, whether that be your opponent or their cards on the board --PRESS SPACE TO CONTINUE--", 25, 8, (120,3)),
+    TextBox("In order to win the game you must reduce the health of your opponent's hero down to 0 and having your health reduced to 0 or below will result in you losing the game. --PRESS SPACE TO CONTINUE--", 20, 8, (120,3)),
+    TextBox("That concludes the tutorial, have fun playing the game! --PRESS SPACE TO CLOSE--", 20, 8, (120,3))
+    ]
+textBox=tutorialBoxes[0]
 #ai=AI()
+tutorialCounter = 0
 while not done:
     mousepos = pygame.mouse.get_pos()
     #Draws the board
@@ -656,6 +794,15 @@ while not done:
     endButton.draw()
     closeButton.draw()
     combineButton.draw()
+    if menu.tutorial:
+        textBox.draw()
+        if pygame.key.get_pressed()[pygame.K_SPACE]:
+            try:
+                tutorialCounter +=1 
+                textBox = tutorialBoxes[tutorialCounter]
+                time.sleep(0.5)
+            except:
+                menu.tutorial = False
     if shopButton.pressed:
         rerollButton.draw()
         if rerollButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
@@ -668,6 +815,7 @@ while not done:
     #Checks if mouse is collided with the button and is clicked, if so it activates the pressed functions of the buttons
     if endButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
         endButton.press()
+        boardPicture = pygame.transform.flip(boardPicture, 1,1)
         time.sleep(0.2)
     if shopButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
         shopButton.press()
