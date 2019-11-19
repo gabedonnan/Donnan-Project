@@ -9,45 +9,6 @@ pygame.init()
 #________________________________#
 
 #Oh boy o man kill me nowski
-##class AI:
-##    def __init__(self):
-##        self.availableActions = {
-##            1:player.play,
-##            2:player.combineCards,
-##            3:player.buyCard,
-##            4:player.attack,
-##            5:player.attackHero
-##            }
-##        self.actionInputs = [
-##            [0],
-##            [1],
-##            [2],
-##            [3],
-##            [4],
-##            [5],
-##            [6],
-##            [7],
-##            [player.playerHand[1][0]],
-##            [player.playerHand[1][1]],
-##            [player.playerHand[1][2]],
-##            [player.playerHand[1][3]],
-##            [player.playerHand[1][4]],
-##            [player.playerHand[1][5]],
-##            [player.playerHand[1][6]],
-##            [player.playerHand[1][7]],
-##            [player.forSale[0]],
-##            [player.forSale[1]],
-##            [player.forSale[2]],
-##            [player.forSale[3]],
-##            [player.forSale[4]],
-##            [player.playerBoard[1][0],player.playerBoard[1]]
-##            ]
-##    def SearchTurn(depth):
-##        for action in self.availableActions:
-##            if action == player.play:
-##                action()
-    
-
 
 #_______________________________#
 ### END MACHINE LEARNING CODE ###
