@@ -580,7 +580,7 @@ class Armoursmith(CardBase):
 
 class Meteor(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 1, "Meteor", 5, 8, 3, "Images\\Meteor.png", "This card can attack immediately when played instead of waiting a turn.")
+        CardBase.__init__(self, 3, "Meteor", 4, 6, 3, "Images\\Meteor.png", "This card can attack immediately when played instead of waiting a turn.")
 
     def played(self):
         self.canAttack = True
