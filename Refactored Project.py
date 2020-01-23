@@ -1,8 +1,6 @@
-import random, pprint, pygame, time
+import random, pprint, pygame, time, os
 from enum import Enum
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
 pygame.init()
 #________________________________#
 ### MACHINE LEARNING CODE HERE ###
@@ -10,6 +8,64 @@ pygame.init()
 
 #Oh boy o man kill me nowski
 
+class TempAI: #Temporary as I would like to add in a reinforcement learning based AI
+    def __init__(self):
+        pass
+
+    def evaluateCards(cards):
+        cardCosts = []
+        for card in cards:
+            cardCosts += card.mana
+        self.subsetSum(cardCosts,player.playerMana[1])
+
+    def subsetSum(numbers, targetNum, partial=[], partial_sum=0):
+        if partial_sum == targetNum:
+            yield partial
+        if partial_sum >= targetNum:
+            return
+        for i, j in enumerate(numbers):
+            remaining = numbers[i + 1:]
+            yield from subset_sum(remaining, targetNum, partial + [j], partial_sum + j) 
+
+    def takeAction():
+        playableCards = []
+        attackList = []
+        attackable = []
+        priorityHigh = []
+        priorityMid = []
+        priorityLow = []
+        for card in player.playerHand[1]:
+            pass #do combining stuff
+        for card in player.playerHand[1]:
+            if card.mana <= player.currentMana[1]:
+                playableCards += card
+        best = self.evaluateCards(playableCards)
+        for minion in player.playerBoard[1]:
+            if minion.canAttack:
+                attackList += minion
+        for minion in player.playerBoard[0]:
+            attackable += minion
+        for attacker in attackList:
+            for defender in attackable:
+                if attacker.attack >= defender.health and defender.attack < attacker.health:
+                    priorityHigh += [attacker,defender]
+                elif attacker.attack >= defender.health and attacker.attack - defender.health < 5:
+                    priorityMid += [attacker,defender]
+                else:
+                    priorityLow += [attacker,defender]
+            totAttack += attacker.attack
+        if totAttack >= player.playerHealth[0] or attackable == []:
+            for attacker in attackList:
+                player.attackHero(attacker)
+        else:
+            if priorityHigh[0][0]:
+                player.attack(priorityHigh[0][0],priorityHigh[0][1])
+            elif priorityMid[0][0]:
+                player.attack(priorityMid[0][0],priorityMid[0][1])
+            else:
+                player.attack(priorityLow[0][0],priorityLow[0][1])
+
+        #Takes an action based on boardstate
 #_______________________________#
 ### END MACHINE LEARNING CODE ###
 #_______________________________#
@@ -233,9 +289,10 @@ class Combine(Button):
         player.combineCards(self.card)
         
 class Player:
+    os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
     displayInfo = pygame.display.Info()
     #For some reason you need to resize the image to 0.83 of the detected monitor resolution as it is too big otherwise
-    screen = pygame.display.set_mode((int(displayInfo.current_w*0.83), int(displayInfo.current_h*0.83)), pygame.FULLSCREEN)
+    screen = pygame.display.set_mode((int(displayInfo.current_w*0.8), int(displayInfo.current_h*0.8)), pygame.NOFRAME)
     coinIcon = [None]*15
     manaIcon = [None]*11
     moneyIcon = [None]*11
@@ -245,6 +302,7 @@ class Player:
         for i in range(0,11):
             self.moneyIcon[i] = pygame.transform.scale(pygame.image.load("Images\\Money" + str(i) + ".png"),(90,120))
         #Loads and scales all of the coin images
+        self.hoverBox = None
         self.coinIcon[0] = pygame.transform.scale(pygame.image.load("Images\\Coin.png"),(45,45))
         self.coinIcon[1] = pygame.transform.scale(pygame.image.load("Images\\Coin2.png"),(45,45))
         self.coinIcon[2] = pygame.transform.scale(pygame.image.load("Images\\Coin3.png"),(45,45))
@@ -449,12 +507,12 @@ class Player:
             location = 180
             #Draws the cards in the board of the current player
             for card in self.playerBoard[self.currentPlayer-1]:
-                self.drawCard((location,size[1]-330),card)
+                self.drawCard((location,size[1]-320),card)
                 location += 180
             location = 180
             #Draws the cards in the board of the opposing player
             for card in self.playerBoard[playerSwap-1]:
-                self.drawCard((location,size[1]-575),card)
+                self.drawCard((location,size[1]-545),card)
                 location += 180
         heroRect = self.screen.blit(self.heroPortrait,(self.screen.get_width()-375,0))
         
@@ -535,6 +593,15 @@ class Glocktopus(CardBase):
         for i in player.playerBoard[playerSwap-1]:
             i.health -= 8
 
+class TestChild(CardBase):
+    def __init__(self):
+        CardBase.__init__(self, 3, "Test", 4, 5, 5,"TempImages\\Sylvanas.png","Test")
+
+    def testFunction(self):
+        print("this is an additional function")
+
+testCard = TestChild()
+testCard.testFunction()
 
 class Sylvannas(CardBase):
     def __init__(self):
@@ -746,6 +813,7 @@ tutorialBoxes = [
 textBox=tutorialBoxes[0]
 #ai=AI()
 tutorialCounter = 0
+
 while not done:
     mousepos = pygame.mouse.get_pos()
     #Draws the board
@@ -755,6 +823,7 @@ while not done:
     endButton.draw()
     closeButton.draw()
     combineButton.draw()
+    mousepressed = pygame.mouse.get_pressed()[0]
     if menu.tutorial:
         textBox.draw()
         if pygame.key.get_pressed()[pygame.K_SPACE]:
@@ -766,45 +835,62 @@ while not done:
                 menu.tutorial = False
     if shopButton.pressed:
         rerollButton.draw()
-        if rerollButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
-            rerollButton.press()
-            time.sleep(0.2)
+        if rerollButton.clickRect.collidepoint(mousepos):
+            player.hoverBox = TextBox("Rerolls the contents of the shop for 1 gold", 20, 8, mousepos)
+            if mousepressed:
+                rerollButton.press()
+                time.sleep(0.2)
     #Checks if the health and attack values of each card have been changed, destroys them if their HP is below 1
     if pygame.mouse.get_pressed()[2]:
         player.attackHover = False
     updateCards()
     #Checks if mouse is collided with the button and is clicked, if so it activates the pressed functions of the buttons
-    if endButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
-        endButton.press()
-        boardPicture = pygame.transform.flip(boardPicture, 1,1)
-        time.sleep(0.2)
-    if shopButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
-        shopButton.press()
-        time.sleep(0.2)
-    if combineButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
-        combineButton.press()
-        time.sleep(0.2)
-    if closeButton.clickRect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
-        closeButton.press()
-        time.sleep(0.2)
+    if endButton.clickRect.collidepoint(mousepos):
+        player.hoverBox = TextBox("Ends the turn", 20, 8, (mousepos[0]-90,mousepos[1]))
+        if mousepressed:
+            endButton.press()
+            boardPicture = pygame.transform.flip(boardPicture, 1,1)
+            time.sleep(0.2)
+    if shopButton.clickRect.collidepoint(mousepos):
+        player.hoverBox = TextBox("Opens the shop", 20, 8, mousepos)
+        if mousepressed:
+            shopButton.press()
+            time.sleep(0.2)
+    if combineButton.clickRect.collidepoint(mousepos):
+        player.hoverBox = TextBox("Opens the combine screen", 20, 8, mousepos)
+        if mousepressed:
+            combineButton.press()
+            time.sleep(0.2)
+    if closeButton.clickRect.collidepoint(mousepos):
+        player.hoverBox = TextBox("Closes the game", 20, 8, (mousepos[0]-100,mousepos[1]))
+        if mousepressed:
+            closeButton.press()
+            time.sleep(0.2)
     if shopButton.pressed:
         shopButton.displayCards()
         for i in shopButton.buttons:
             #Defines the collision rects for each button generated by the shopButton
             temprect = pygame.Rect(i.coords,(60,27))
-            if temprect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
-                i.press()
-                time.sleep(0.1)
+            if temprect.collidepoint(mousepos):
+                player.hoverBox = TextBox("Buys the above card", 20, 8, mousepos)
+                if mousepressed:
+                    i.press()
+                    time.sleep(0.1)
     elif combineButton.pressed:
         combineButton.displayCards()
         for i in combineButton.buttons:
             #Defines the collision rects for each button generated by the combineButton
             temprect = pygame.Rect(i.coords,(60,27))
-            if temprect.collidepoint(mousepos) and pygame.mouse.get_pressed()[0]:
-                i.press()
-                time.sleep(0.1)
+            if temprect.collidepoint(mousepos):
+                player.hoverBox = TextBox("Combines the above card with like cards", 20, 8, mousepos)
+                if mousepressed:
+                    i.press()
+                    time.sleep(0.1)
     #Displays everything on the board and in the hand of players
     player.boardDisplay(mousepos)
+    if player.hoverBox:
+        player.hoverBox.draw()
+    player.hoverBox = None   
     if player.attackHover:
         player.screen.blit(player.cross,(mousepos[0]-32,mousepos[1]-32))
     #Updates the diplay
