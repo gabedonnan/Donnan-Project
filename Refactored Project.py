@@ -593,15 +593,6 @@ class Glocktopus(CardBase):
         for i in player.playerBoard[playerSwap-1]:
             i.health -= 8
 
-class TestChild(CardBase):
-    def __init__(self):
-        CardBase.__init__(self, 3, "Test", 4, 5, 5,"TempImages\\Sylvanas.png","Test")
-
-    def testFunction(self):
-        print("this is an additional function")
-
-testCard = TestChild()
-testCard.testFunction()
 
 class Sylvannas(CardBase):
     def __init__(self):
