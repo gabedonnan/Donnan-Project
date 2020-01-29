@@ -638,10 +638,15 @@ class Armoursmith(CardBase):
 
 class Meteor(CardBase):
     def __init__(self):
-        CardBase.__init__(self, 3, "Meteor", 4, 6, 3, "Images\\Meteor.png", "This card can attack immediately when played instead of waiting a turn.")
+        CardBase.__init__(self, 3, "Meteor", 4, 6, 3, "Images\\Meteor.png", "Whenever this card attacks it also deals 2 damage to up to 2 random enemy cards.")
 
-    def played(self):
-        self.canAttack = True
+    def attacking(self):
+        playerSwap = (player.currentPlayer % 2)+1
+        for i in range(2):
+            try:
+                random.choice(player.playerBoard[playerSwap-1]).health -= 2
+            except:
+                pass
 
 class Implings(CardBase):
     def __init__(self):
