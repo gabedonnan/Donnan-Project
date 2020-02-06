@@ -82,34 +82,34 @@ class TextBox:
         self.location = location
         self.text = text
         self.maxCharWidth = maxCharWidth
-        self.bufferSize = bufferSize
-        self.font = pygame.font.SysFont('arial', 16)
+        self.bufferSize = bufferSize #A padding for the edges of the box
+        self.font = pygame.font.SysFont('arial', 16) #Creates the font to draw the text in
         self.font.set_bold(True)
         wordLen=0
         count = 0
         textSplit = [[]]
         for word in self.text.split(" "):
-            wordLen += len(word)
-            textSplit[count].append(word)
-            if wordLen > maxCharWidth:
+            wordLen += len(word) #Adds to the word length to judge when to go onto the next line of text
+            textSplit[count].append(word) #Adds the current word to the current line of text to be rendered
+            if wordLen > maxCharWidth: #If there are enough characters in the line the program moves onto the next line
                 count += 1
                 wordLen = 0
                 textSplit.append([])
         count = 0
         self.textDisplay = []
         for line in textSplit:
-            self.textDisplay.append(self.font.render(" ".join(line), True, (255,255,255)))
+            self.textDisplay.append(self.font.render(" ".join(line), True, (255,255,255))) #Renders each of the text lines as a text surface 
 
     def draw(self):
         addFactor = 0
         provisionalW = 0
         for i in self.textDisplay:
             if i.get_width() > provisionalW:
-                provisionalW = i.get_width()
-        pygame.draw.rect(player.screen,(0,0,0),(self.location,(provisionalW + 2*self.bufferSize,len(self.textDisplay)*16 + 2*self.bufferSize)),0)
-        pygame.draw.rect(player.screen,(255,255,255),(self.location,(provisionalW + 2*self.bufferSize,len(self.textDisplay)*16 + 2*self.bufferSize)),2)
+                provisionalW = i.get_width() #sets the provisional width of the box to the width of the current line if it's longer than the previous provisional width
+        pygame.draw.rect(player.screen,(0,0,0),(self.location,(provisionalW + 2*self.bufferSize,len(self.textDisplay)*16 + 2*self.bufferSize)),0) #draws the black background of the box with the width of the provisional width + the buffer
+        pygame.draw.rect(player.screen,(255,255,255),(self.location,(provisionalW + 2*self.bufferSize,len(self.textDisplay)*16 + 2*self.bufferSize)),2) #draws the white border of the box with the same dimensions as the black box
         for line in self.textDisplay:
-            player.screen.blit(line,(self.location[0]+self.bufferSize,self.location[1]+self.bufferSize+addFactor))
+            player.screen.blit(line,(self.location[0]+self.bufferSize,self.location[1]+self.bufferSize)) #Draws the lines of text on the box
             addFactor += 14
 
 class Button:
@@ -648,6 +648,7 @@ class Meteor(CardBase):
             except:
                 pass
 
+
 class Implings(CardBase):
     def __init__(self):
         CardBase.__init__(self, 1, "Implings", 0, 2, 1, "Images\\Imps.png", "When this card is destroyed reroll the shop for the current player.")
@@ -892,12 +893,20 @@ while not done:
     #Updates the diplay
     pygame.display.update()
     #Checks if the window has been closed (this is essentially functionless for now but it manages events)
-    if player.playerHealth[0] < 1 or player.playerHealth[1] < 1:
+    if player.playerHealth[1] < 1:
+        winningPlayer = 1
+        done = True
+    elif player.playerHealth[0] < 1:
+        winningPlayer = 2
         done = True
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
     #player.boardDisplay()
+endBox = TextBox("Player " + str(winningPlayer) + " wins!", 20, 8, (int(player.screen.get_width()/2),int(player.screen.get_height()/2)))
+endBox.draw()
+pygame.display.update()
+time.sleep(5)
 pygame.quit()
     
     
