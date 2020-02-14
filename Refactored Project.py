@@ -1,6 +1,4 @@
-import random, pprint, pygame, time, os
-from enum import Enum
-import numpy as np
+import random, pygame, time, os
 pygame.init()
 #________________________________#
 ### MACHINE LEARNING CODE HERE ###
@@ -12,59 +10,91 @@ class TempAI: #Temporary as I would like to add in a reinforcement learning base
     def __init__(self):
         pass
 
-    def evaluateCards(cards):
-        cardCosts = []
-        for card in cards:
-            cardCosts += card.mana
-        self.subsetSum(cardCosts,player.playerMana[1])
+##    def evaluateCards(cards): #Finds the most optimal combination of cards to play based on their mana combinations
+##        cardCosts = []
+##        for card in cards:
+##            cardCosts.append(card.mana)
+##        self.subsetSum(cardCosts,player.playerMana[1])
+##
+##    def subsetSum(numbers, targetNum, partial=[], partial_sum=0):
+##        if partial_sum == targetNum:
+##            yield partial
+##        if partial_sum >= targetNum:
+##            return
+##        for i, j in enumerate(numbers):
+##            remaining = numbers[i + 1:]
+##            yield from subset_sum(remaining, targetNum, partial + [j], partial_sum + j) 
 
-    def subsetSum(numbers, targetNum, partial=[], partial_sum=0):
-        if partial_sum == targetNum:
-            yield partial
-        if partial_sum >= targetNum:
-            return
-        for i, j in enumerate(numbers):
-            remaining = numbers[i + 1:]
-            yield from subset_sum(remaining, targetNum, partial + [j], partial_sum + j) 
-
-    def takeAction():
+    def takeAction(self):
         playableCards = []
         attackList = []
         attackable = []
         priorityHigh = []
         priorityMid = []
         priorityLow = []
+        possiblePurchases = []
+        totAttack = 0
+        noPasses = False
+        while player.playerCurrency[1] > 0 and noPasses == False:
+            noPasses = True
+            for card in player.forSale:
+                if player.playerCurrency[1] > card.shopCost and len(player.playerHand[1])<7:
+                    possiblePurchases.append(card)
+                    noPasses = False #Tells the program to keep looping through the cards as there are still more to be purchased
+            for item in possiblePurchases:
+                try:
+                    player.buyCard(item)
+                except:
+                    pass
+            possiblePurchases = []
         for card in player.playerHand[1]:
-            pass #do combining stuff
+            try:
+                player.combineCards(card)
+            except:
+                pass #This exception is to catch the error that occurs due to the list size changing due to combining of cards meaning the list isnt looped through correctly
         for card in player.playerHand[1]:
-            if card.mana <= player.currentMana[1]:
-                playableCards += card
-        best = self.evaluateCards(playableCards)
+            if card.mana <= player.playerMana[1]:
+                playableCards.append(card)
+        for i in range(50):
+            try:
+                player.play(i%8)
+            except:
+                pass
         for minion in player.playerBoard[1]:
             if minion.canAttack:
-                attackList += minion
+                attackList.append(minion)
         for minion in player.playerBoard[0]:
-            attackable += minion
+            attackable.append(minion)
         for attacker in attackList:
             for defender in attackable:
                 if attacker.attack >= defender.health and defender.attack < attacker.health:
-                    priorityHigh += [attacker,defender]
+                    priorityHigh.append([attacker,defender])
                 elif attacker.attack >= defender.health and attacker.attack - defender.health < 5:
-                    priorityMid += [attacker,defender]
+                    priorityMid.append([attacker,defender])
                 else:
-                    priorityLow += [attacker,defender]
+                    priorityLow.append([attacker,defender])
             totAttack += attacker.attack
         if totAttack >= player.playerHealth[0] or attackable == []:
             for attacker in attackList:
                 player.attackHero(attacker)
         else:
-            if priorityHigh[0][0]:
+            try:
                 player.attack(priorityHigh[0][0],priorityHigh[0][1])
-            elif priorityMid[0][0]:
-                player.attack(priorityMid[0][0],priorityMid[0][1])
-            else:
-                player.attack(priorityLow[0][0],priorityLow[0][1])
-
+            except:
+                try:
+                    player.attack(priorityMid[0][0],priorityMid[0][1])
+                except:
+                    try:
+                        player.attack(priorityLow[0][0],priorityLow[0][1])
+                    except:
+                        pass
+        for i in priorityHigh:
+            player.attack(i[0],i[1])
+        for i in priorityMid:
+            player.attack(i[0],i[1])
+        for i in priorityLow:
+            player.attack(i[0],i[1])
+        player.endTurn()
         #Takes an action based on boardstate
 #_______________________________#
 ### END MACHINE LEARNING CODE ###
@@ -74,7 +104,7 @@ class Menu:
     def __init__(self):
         self.playing = False
         #Mode True is playing in local multiplayer, mode False will be playing vs an AI
-        self.mode = False
+        self.mode = True
         self.tutorial = False
 
 class TextBox:
@@ -155,6 +185,7 @@ class ToggleTutorial(Button):
     def press(self):
         self.active = not self.active
         menu.tutorial = not menu.tutorial
+        
 
 class VsAI(Button):
     def __init__(self):
@@ -165,7 +196,7 @@ class VsAI(Button):
     def press(self):
         self.active = True
         playerButton.active = False
-        menu.mode = False
+        menu.mode = True
 
 class VsPlayer(Button):
     def __init__(self):
@@ -175,7 +206,7 @@ class VsPlayer(Button):
     def press(self):
         self.active = True
         AIButton.active = False
-        menu.mode = True
+        menu.mode = False
 
 class CloseGame(Button):
     def __init__(self):
@@ -381,8 +412,6 @@ class Player:
             self.playerHand[self.currentPlayer-1].append(card)
             if len(self.forSale) == 0:
                 shopButton.pressed = False
-        else:
-            print("Oops, looks like you cant buy that right now!")
 
     def attack(self, card1, card2):
         #Allows one card to attack another if it can attack
@@ -395,7 +424,6 @@ class Player:
             card1.canAttack = False
             self.attackHover = False
         else:
-            print("That minion cannot attack right now")
             self.attackHover = False
 
     def destroy(self,card, player):
@@ -519,7 +547,7 @@ class Player:
         if heroRect.collidepoint(mousepos):
             heroRect = self.screen.blit(self.heroPortraitHover,(self.screen.get_width()-375,0))
             if self.attackHover and pygame.mouse.get_pressed()[0]:
-                self.attackHero(self.attacker)
+                self.attackHero(self.attacker) ###################################
         else:
             heroRect = self.screen.blit(self.heroPortrait,(player.screen.get_width()-375,0))
         healthText = font.render(str(self.playerHealth[playerSwap-1]),True,(255,255,255))
@@ -584,7 +612,7 @@ class CardBase:
 class Glocktopus(CardBase):
     #All init statements for CardBase subclasses are extremely similar, merely passing in the values needed
     def __init__(self):
-        CardBase.__init__(self, 2, "Glocktopus", 5, 2, 8,"Images\\Glocktopus.png","When played deals 8 damage to all enemy cards on the battlefield.")
+        CardBase.__init__(self, 2, "Glocktopus", 5, 2, 5,"Images\\Glocktopus.png","When played deals 8 damage to all enemy cards on the battlefield.")
         
     def played(self):
         #Deals 8 damage to all cards on the opposing side of the board
@@ -643,9 +671,9 @@ class Meteor(CardBase):
     def attacking(self):
         playerSwap = (player.currentPlayer % 2)+1
         for i in range(2):
-            try:
+            try: # Attempts to deal 2 damage to up to 2 enemies on the enemy player's board
                 random.choice(player.playerBoard[playerSwap-1]).health -= 2
-            except:
+            except: # If this fails as the card has died already this except acts as a catch for that situation
                 pass
 
 
@@ -760,6 +788,7 @@ playerButton = VsPlayer()
 AIButton = VsAI()
 tutorialButton = ToggleTutorial()
 playGameButton = PlayGame()
+opponent = TempAI()
 while not menu.playing:
     mousepos = pygame.mouse.get_pos()
     tutorialButton.draw()
@@ -821,6 +850,9 @@ while not done:
     closeButton.draw()
     combineButton.draw()
     mousepressed = pygame.mouse.get_pressed()[0]
+    if menu.mode == True and player.currentPlayer == 2:
+        opponent.takeAction()
+        #boardPicture = pygame.transform.flip(boardPicture, 1,1)
     if menu.tutorial:
         textBox.draw()
         if pygame.key.get_pressed()[pygame.K_SPACE]:
@@ -846,7 +878,8 @@ while not done:
         player.hoverBox = TextBox("Ends the turn", 20, 8, (mousepos[0]-90,mousepos[1]))
         if mousepressed:
             endButton.press()
-            boardPicture = pygame.transform.flip(boardPicture, 1,1)
+            if not menu.mode == True:
+                boardPicture = pygame.transform.flip(boardPicture, 1,1)
             time.sleep(0.2)
     if shopButton.clickRect.collidepoint(mousepos):
         player.hoverBox = TextBox("Opens the shop", 20, 8, mousepos)
