@@ -1,29 +1,9 @@
 import random, pygame, time, os
 pygame.init()
-#________________________________#
-### MACHINE LEARNING CODE HERE ###
-#________________________________#
-
-#Oh boy o man kill me nowski
 
 class TempAI: #Temporary as I would like to add in a reinforcement learning based AI
     def __init__(self):
         pass
-
-##    def evaluateCards(cards): #Finds the most optimal combination of cards to play based on their mana combinations
-##        cardCosts = []
-##        for card in cards:
-##            cardCosts.append(card.mana)
-##        self.subsetSum(cardCosts,player.playerMana[1])
-##
-##    def subsetSum(numbers, targetNum, partial=[], partial_sum=0):
-##        if partial_sum == targetNum:
-##            yield partial
-##        if partial_sum >= targetNum:
-##            return
-##        for i, j in enumerate(numbers):
-##            remaining = numbers[i + 1:]
-##            yield from subset_sum(remaining, targetNum, partial + [j], partial_sum + j) 
 
     def takeAction(self):
         playableCards = []
@@ -34,7 +14,7 @@ class TempAI: #Temporary as I would like to add in a reinforcement learning base
         priorityLow = []
         possiblePurchases = []
         totAttack = 0
-        noPasses = False
+        noPasses = False #This variable defines whether there are any cards left in the shop that the player can buy that they have not already bought
         while player.playerCurrency[1] > 0 and noPasses == False:
             noPasses = True
             for card in player.forSale:
@@ -55,37 +35,37 @@ class TempAI: #Temporary as I would like to add in a reinforcement learning base
         for card in player.playerHand[1]:
             if card.mana <= player.playerMana[1]:
                 playableCards.append(card)
-        for i in range(50):
+        for i in range(50): #This loops 50 times. This is an arbitrary number, it just needs to be rougly 3 times the possible length of the player's hand so that no cards that are playable are missed due to changing of hand size
             try:
                 player.play(i%8)
             except:
                 pass
         for minion in player.playerBoard[1]:
-            if minion.canAttack:
-                attackList.append(minion)
+            if minion.canAttack: 
+                attackList.append(minion) #Adds all minions which can attack to a list
         for minion in player.playerBoard[0]:
-            attackable.append(minion)
-        for attacker in attackList:
-            for defender in attackable:
-                if attacker.attack >= defender.health and defender.attack < attacker.health:
+            attackable.append(minion) #Adds all minions which can be attacked to a list
+        for attacker in attackList: #Iterates through all attackers
+            for defender in attackable: #Iterates through all defenders for each attacker
+                if attacker.attack >= defender.health and defender.attack < attacker.health: #Defines the characteristics of a high priority trade (minimal loss for the AI / maximal gain)
                     priorityHigh.append([attacker,defender])
-                elif attacker.attack >= defender.health and attacker.attack - defender.health < 5:
+                elif attacker.attack >= defender.health and attacker.attack - defender.health < 5: #Defines the characteristics of a medium priority trade
                     priorityMid.append([attacker,defender])
-                else:
+                else: #Catches all other possible trades as low priority
                     priorityLow.append([attacker,defender])
-            totAttack += attacker.attack
+            totAttack += attacker.attack #Adds the current attacker's attack to the total attack variable
         if totAttack >= player.playerHealth[0] or attackable == []:
             for attacker in attackList:
-                player.attackHero(attacker)
+                player.attackHero(attacker) #Causes all the cards in the AI's board to attack the player if their health is sufficiently low or if there are no minions to attack on the other player's board
         else:
             try:
-                player.attack(priorityHigh[0][0],priorityHigh[0][1])
+                player.attack(priorityHigh[0][0],priorityHigh[0][1]) #Attempts to attack with the high priority attacks first
             except:
                 try:
-                    player.attack(priorityMid[0][0],priorityMid[0][1])
+                    player.attack(priorityMid[0][0],priorityMid[0][1])# Then medium
                 except:
                     try:
-                        player.attack(priorityLow[0][0],priorityLow[0][1])
+                        player.attack(priorityLow[0][0],priorityLow[0][1])#Then low
                     except:
                         pass
         for i in priorityHigh:
@@ -94,11 +74,9 @@ class TempAI: #Temporary as I would like to add in a reinforcement learning base
             player.attack(i[0],i[1])
         for i in priorityLow:
             player.attack(i[0],i[1])
-        player.endTurn()
+        player.endTurn()#Ends the turn at the end of all actions taken
         #Takes an action based on boardstate
-#_______________________________#
-### END MACHINE LEARNING CODE ###
-#_______________________________#
+
 
 class Menu:
     def __init__(self):
@@ -139,7 +117,7 @@ class TextBox:
         pygame.draw.rect(player.screen,(0,0,0),(self.location,(provisionalW + 2*self.bufferSize,len(self.textDisplay)*16 + 2*self.bufferSize)),0) #draws the black background of the box with the width of the provisional width + the buffer
         pygame.draw.rect(player.screen,(255,255,255),(self.location,(provisionalW + 2*self.bufferSize,len(self.textDisplay)*16 + 2*self.bufferSize)),2) #draws the white border of the box with the same dimensions as the black box
         for line in self.textDisplay:
-            player.screen.blit(line,(self.location[0]+self.bufferSize,self.location[1]+self.bufferSize)) #Draws the lines of text on the box
+            player.screen.blit(line,(self.location[0]+self.bufferSize,self.location[1]+self.bufferSize+addFactor)) #Draws the lines of text on the box
             addFactor += 14
 
 class Button:
@@ -851,11 +829,10 @@ while not done:
     combineButton.draw()
     mousepressed = pygame.mouse.get_pressed()[0]
     if menu.mode == True and player.currentPlayer == 2:
-        opponent.takeAction()
-        #boardPicture = pygame.transform.flip(boardPicture, 1,1)
+        opponent.takeAction() #Causes the AI to take actions when it is active and the player ends their turn
     if menu.tutorial:
         textBox.draw()
-        if pygame.key.get_pressed()[pygame.K_SPACE]:
+        if pygame.key.get_pressed()[pygame.K_SPACE]: #Iterates through the tutorial
             try:
                 tutorialCounter +=1 
                 textBox = tutorialBoxes[tutorialCounter]
@@ -878,7 +855,7 @@ while not done:
         player.hoverBox = TextBox("Ends the turn", 20, 8, (mousepos[0]-90,mousepos[1]))
         if mousepressed:
             endButton.press()
-            if not menu.mode == True:
+            if not menu.mode == True: #Only flips the board if the AI is not active
                 boardPicture = pygame.transform.flip(boardPicture, 1,1)
             time.sleep(0.2)
     if shopButton.clickRect.collidepoint(mousepos):
@@ -935,11 +912,11 @@ while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
-    #player.boardDisplay()
+
 endBox = TextBox("Player " + str(winningPlayer) + " wins!", 20, 8, (int(player.screen.get_width()/2),int(player.screen.get_height()/2)))
-endBox.draw()
+endBox.draw() #Displays the player that won the game in a textbox in the middle of the screen
 pygame.display.update()
 time.sleep(5)
-pygame.quit()
+pygame.quit() #Closes the game forcibly when it is over
     
     
