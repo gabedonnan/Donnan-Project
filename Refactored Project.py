@@ -913,7 +913,7 @@ while not done:
         if event.type == pygame.QUIT:
             done = True
 
-endBox = TextBox("Player " + str(winningPlayer) + " wins!", 20, 8, (int(player.screen.get_width()/2),int(player.screen.get_height()/2)))
+endBox = TextBox("Player " + str(winningPlayer) + " wins!", 20, 30, (int(player.screen.get_width()/2),int(player.screen.get_height()/2)))
 endBox.draw() #Displays the player that won the game in a textbox in the middle of the screen
 pygame.display.update()
 time.sleep(5)
